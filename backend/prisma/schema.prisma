@@ -1,8 +1,3 @@
-// ============================================================
-// AI Railway Block Management System — Prisma Schema
-// Schemas: core, tms, tdms, smms, coa, planning
-// ============================================================
-
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["multiSchema"]
@@ -11,25 +6,20 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["core", "tms", "tdms", "smms", "coa", "planning"]
+  schemas  = ["coa", "core", "planning", "smms", "tdms", "tms"]
 }
 
-// ============================================================
-// SCHEMA: core
-// ============================================================
-
 model User {
-  id             String    @id @default(uuid())
-  name           String
-  email          String    @unique
-  password_hash  String
-  role           String    // engineering | traction | signal | control_office | admin
-  department     String    // TMS | TDMS | SMMS | COA | ADMIN
-  last_login_at  DateTime?
-  created_at     DateTime  @default(now())
-  updated_at     DateTime  @updatedAt
-
-  audit_logs     AuditLog[]
+  id            String     @id @default(uuid())
+  name          String
+  email         String     @unique
+  password_hash String
+  role          String
+  department    String
+  last_login_at DateTime?
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+  audit_logs    AuditLog[]
 
   @@map("users")
   @@schema("core")
@@ -38,7 +28,7 @@ model User {
 model Asset {
   id          String   @id @default(uuid())
   asset_code  String   @unique
-  asset_type  String   // track | locomotive | signal | station
+  asset_type  String
   name        String
   location_km Float?
   zone        String?
@@ -61,8 +51,8 @@ model AuditLog {
   new_data     Json?
   performed_by String
   user_id      String?
-  user         User?    @relation(fields: [user_id], references: [id])
   created_at   DateTime @default(now())
+  user         User?    @relation(fields: [user_id], references: [id])
 
   @@map("audit_log")
   @@schema("core")
@@ -81,34 +71,26 @@ model Notification {
   @@schema("core")
 }
 
-// ============================================================
-// SCHEMA: tms
-// ============================================================
-
 model TrackMaintenance {
-  id           String    @id @default(uuid())
-  asset_id     String?
-  asset_type   String
-  location_km  Float?
-  defect_type  String
-  severity     String
-  description  String?
-  reported_by  String?
-  reported_at  DateTime  @default(now())
-  is_deleted   Boolean   @default(false)
-  deleted_at   DateTime?
-  deleted_by   String?
-  created_by   String?
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
+  id          String    @id @default(uuid())
+  asset_id    String?
+  asset_type  String
+  location_km Float?
+  defect_type String
+  severity    String
+  description String?
+  reported_by String?
+  reported_at DateTime  @default(now())
+  is_deleted  Boolean   @default(false)
+  deleted_at  DateTime?
+  deleted_by  String?
+  created_by  String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
 
   @@map("track_maintenance")
   @@schema("tms")
 }
-
-// ============================================================
-// SCHEMA: tdms
-// ============================================================
 
 model TractionMaintenance {
   id          String    @id @default(uuid())
@@ -131,10 +113,6 @@ model TractionMaintenance {
   @@schema("tdms")
 }
 
-// ============================================================
-// SCHEMA: smms
-// ============================================================
-
 model SignallingMaintenance {
   id          String    @id @default(uuid())
   signal_id   String
@@ -156,10 +134,6 @@ model SignallingMaintenance {
   @@schema("smms")
 }
 
-// ============================================================
-// SCHEMA: coa
-// ============================================================
-
 model TrainOperations {
   id             String   @id @default(uuid())
   train_number   String
@@ -177,28 +151,23 @@ model TrainOperations {
   @@schema("coa")
 }
 
-// ============================================================
-// SCHEMA: planning
-// ============================================================
-
 model MaintenanceTask {
-  id              String    @id @default(uuid())
-  source_system   String
-  source_id       String
-  task_type       String
-  priority_score  Float     @default(0)
-  severity        String
-  description     String?
-  location        String?
-  department      String
-  asset_id        String?
-  estimated_hours Float     @default(2)
-  status          String    @default("pending")
-  is_deleted      Boolean   @default(false)
-  ai_score_data   Json?
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-
+  id               String               @id @default(uuid())
+  source_system    String
+  source_id        String
+  task_type        String
+  priority_score   Float                @default(0)
+  severity         String
+  description      String?
+  location         String?
+  department       String
+  asset_id         String?
+  estimated_hours  Float                @default(2)
+  status           String               @default("pending")
+  is_deleted       Boolean              @default(false)
+  ai_score_data    Json?
+  created_at       DateTime             @default(now())
+  updated_at       DateTime             @updatedAt
   block_plan_items BlockPlanTrain[]
   history          MaintenanceHistory[]
 
@@ -207,7 +176,7 @@ model MaintenanceTask {
 }
 
 model BlockDemand {
-  id             String    @id @default(uuid())
+  id             String      @id @default(uuid())
   section        String
   from_km        Float
   to_km          Float
@@ -215,10 +184,9 @@ model BlockDemand {
   demanded_for   DateTime
   duration_hours Float
   reason         String?
-  status         String    @default("pending")
-  created_at     DateTime  @default(now())
-  updated_at     DateTime  @updatedAt
-
+  status         String      @default("pending")
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
   block_plans    BlockPlan[]
 
   @@map("block_demands")
@@ -226,9 +194,8 @@ model BlockDemand {
 }
 
 model BlockPlan {
-  id              String       @id @default(uuid())
+  id              String           @id @default(uuid())
   block_demand_id String?
-  block_demand    BlockDemand? @relation(fields: [block_demand_id], references: [id])
   week_start      DateTime
   week_end        DateTime
   section         String
@@ -236,15 +203,15 @@ model BlockPlan {
   to_km           Float
   planned_start   DateTime
   planned_end     DateTime
-  status          String       @default("draft")
+  status          String           @default("draft")
   approved_by     String?
   approved_at     DateTime?
   conflict_flags  Json?
-  created_at      DateTime     @default(now())
-  updated_at      DateTime     @updatedAt
-
-  trains    BlockPlanTrain[]
-  conflicts Conflict[]
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+  trains          BlockPlanTrain[]
+  block_demand    BlockDemand?     @relation(fields: [block_demand_id], references: [id])
+  conflicts       Conflict[]
 
   @@map("block_plans")
   @@schema("planning")
@@ -253,13 +220,13 @@ model BlockPlan {
 model BlockPlanTrain {
   id            String           @id @default(uuid())
   block_plan_id String
-  block_plan    BlockPlan        @relation(fields: [block_plan_id], references: [id])
   task_id       String?
-  task          MaintenanceTask? @relation(fields: [task_id], references: [id])
   train_number  String?
   impact_type   String?
   notes         String?
   created_at    DateTime         @default(now())
+  block_plan    BlockPlan        @relation(fields: [block_plan_id], references: [id])
+  task          MaintenanceTask? @relation(fields: [task_id], references: [id])
 
   @@map("block_plan_trains")
   @@schema("planning")
@@ -268,13 +235,13 @@ model BlockPlanTrain {
 model MaintenanceHistory {
   id           String          @id @default(uuid())
   task_id      String
-  task         MaintenanceTask @relation(fields: [task_id], references: [id])
   action       String
   old_status   String?
   new_status   String?
   notes        String?
   performed_by String?
   created_at   DateTime        @default(now())
+  task         MaintenanceTask @relation(fields: [task_id], references: [id])
 
   @@map("maintenance_history")
   @@schema("planning")
@@ -298,7 +265,6 @@ model ScheduledTask {
 model Conflict {
   id            String    @id @default(uuid())
   block_plan_id String
-  block_plan    BlockPlan @relation(fields: [block_plan_id], references: [id])
   conflict_type String
   description   String
   severity      String    @default("medium")
@@ -306,23 +272,24 @@ model Conflict {
   resolved_by   String?
   resolved_at   DateTime?
   created_at    DateTime  @default(now())
+  block_plan    BlockPlan @relation(fields: [block_plan_id], references: [id])
 
   @@map("conflicts")
   @@schema("planning")
 }
 
 model ApprovedBlockPlan {
-  id              String   @id @default(uuid())
-  block_plan_id   String   @unique
-  section         String
-  from_km         Float
-  to_km           Float
-  planned_start   DateTime
-  planned_end     DateTime
-  approved_by     String
-  approved_at     DateTime @default(now())
-  tasks_snapshot  Json?
-  metadata        Json?
+  id             String   @id @default(uuid())
+  block_plan_id  String   @unique
+  section        String
+  from_km        Float
+  to_km          Float
+  planned_start  DateTime
+  planned_end    DateTime
+  approved_by    String
+  approved_at    DateTime @default(now())
+  tasks_snapshot Json?
+  metadata       Json?
 
   @@map("approved_block_plans")
   @@schema("planning")
