@@ -1,0 +1,7 @@
+.env
+.env.*
+!.env.example
+node_modules/
+**/*API KEY*.txt
+*.pem
+*.key
