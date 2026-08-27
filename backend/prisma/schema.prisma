@@ -1,0 +1,329 @@
+// ============================================================
+// AI Railway Block Management System — Prisma Schema
+// Schemas: core, tms, tdms, smms, coa, planning
+// ============================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["core", "tms", "tdms", "smms", "coa", "planning"]
+}
+
+// ============================================================
+// SCHEMA: core
+// ============================================================
+
+model User {
+  id             String    @id @default(uuid())
+  name           String
+  email          String    @unique
+  password_hash  String
+  role           String    // engineering | traction | signal | control_office | admin
+  department     String    // TMS | TDMS | SMMS | COA | ADMIN
+  last_login_at  DateTime?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  audit_logs     AuditLog[]
+
+  @@map("users")
+  @@schema("core")
+}
+
+model Asset {
+  id          String   @id @default(uuid())
+  asset_code  String   @unique
+  asset_type  String   // track | locomotive | signal | station
+  name        String
+  location_km Float?
+  zone        String?
+  division    String?
+  status      String   @default("active")
+  metadata    Json?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("assets")
+  @@schema("core")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  action       String
+  table_name   String
+  record_id    String
+  old_data     Json?
+  new_data     Json?
+  performed_by String
+  user_id      String?
+  user         User?    @relation(fields: [user_id], references: [id])
+  created_at   DateTime @default(now())
+
+  @@map("audit_log")
+  @@schema("core")
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  type       String
+  title      String
+  message    String
+  related_id String?
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  @@map("notifications")
+  @@schema("core")
+}
+
+// ============================================================
+// SCHEMA: tms
+// ============================================================
+
+model TrackMaintenance {
+  id           String    @id @default(uuid())
+  asset_id     String?
+  asset_type   String
+  location_km  Float?
+  defect_type  String
+  severity     String
+  description  String?
+  reported_by  String?
+  reported_at  DateTime  @default(now())
+  is_deleted   Boolean   @default(false)
+  deleted_at   DateTime?
+  deleted_by   String?
+  created_by   String?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  @@map("track_maintenance")
+  @@schema("tms")
+}
+
+// ============================================================
+// SCHEMA: tdms
+// ============================================================
+
+model TractionMaintenance {
+  id          String    @id @default(uuid())
+  loco_number String
+  loco_type   String
+  defect_type String
+  severity    String
+  description String?
+  depot       String?
+  reported_by String?
+  reported_at DateTime  @default(now())
+  is_deleted  Boolean   @default(false)
+  deleted_at  DateTime?
+  deleted_by  String?
+  created_by  String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  @@map("traction_maintenance")
+  @@schema("tdms")
+}
+
+// ============================================================
+// SCHEMA: smms
+// ============================================================
+
+model SignallingMaintenance {
+  id          String    @id @default(uuid())
+  signal_id   String
+  signal_type String
+  location_km Float?
+  defect_type String
+  severity    String
+  description String?
+  reported_by String?
+  reported_at DateTime  @default(now())
+  is_deleted  Boolean   @default(false)
+  deleted_at  DateTime?
+  deleted_by  String?
+  created_by  String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  @@map("signalling_maintenance")
+  @@schema("smms")
+}
+
+// ============================================================
+// SCHEMA: coa
+// ============================================================
+
+model TrainOperations {
+  id             String   @id @default(uuid())
+  train_number   String
+  from_station   String
+  to_station     String
+  departure_time DateTime
+  arrival_time   DateTime
+  status         String   @default("on_time")
+  delay_minutes  Int?
+  section        String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  @@map("train_operations")
+  @@schema("coa")
+}
+
+// ============================================================
+// SCHEMA: planning
+// ============================================================
+
+model MaintenanceTask {
+  id              String    @id @default(uuid())
+  source_system   String
+  source_id       String
+  task_type       String
+  priority_score  Float     @default(0)
+  severity        String
+  description     String?
+  location        String?
+  department      String
+  asset_id        String?
+  estimated_hours Float     @default(2)
+  status          String    @default("pending")
+  is_deleted      Boolean   @default(false)
+  ai_score_data   Json?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  block_plan_items BlockPlanTrain[]
+  history          MaintenanceHistory[]
+
+  @@map("maintenance_tasks")
+  @@schema("planning")
+}
+
+model BlockDemand {
+  id             String    @id @default(uuid())
+  section        String
+  from_km        Float
+  to_km          Float
+  demanded_by    String
+  demanded_for   DateTime
+  duration_hours Float
+  reason         String?
+  status         String    @default("pending")
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  block_plans    BlockPlan[]
+
+  @@map("block_demands")
+  @@schema("planning")
+}
+
+model BlockPlan {
+  id              String       @id @default(uuid())
+  block_demand_id String?
+  block_demand    BlockDemand? @relation(fields: [block_demand_id], references: [id])
+  week_start      DateTime
+  week_end        DateTime
+  section         String
+  from_km         Float
+  to_km           Float
+  planned_start   DateTime
+  planned_end     DateTime
+  status          String       @default("draft")
+  approved_by     String?
+  approved_at     DateTime?
+  conflict_flags  Json?
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+
+  trains    BlockPlanTrain[]
+  conflicts Conflict[]
+
+  @@map("block_plans")
+  @@schema("planning")
+}
+
+model BlockPlanTrain {
+  id            String           @id @default(uuid())
+  block_plan_id String
+  block_plan    BlockPlan        @relation(fields: [block_plan_id], references: [id])
+  task_id       String?
+  task          MaintenanceTask? @relation(fields: [task_id], references: [id])
+  train_number  String?
+  impact_type   String?
+  notes         String?
+  created_at    DateTime         @default(now())
+
+  @@map("block_plan_trains")
+  @@schema("planning")
+}
+
+model MaintenanceHistory {
+  id           String          @id @default(uuid())
+  task_id      String
+  task         MaintenanceTask @relation(fields: [task_id], references: [id])
+  action       String
+  old_status   String?
+  new_status   String?
+  notes        String?
+  performed_by String?
+  created_at   DateTime        @default(now())
+
+  @@map("maintenance_history")
+  @@schema("planning")
+}
+
+model ScheduledTask {
+  id              String    @id @default(uuid())
+  name            String
+  cron_expression String
+  last_run_at     DateTime?
+  next_run_at     DateTime?
+  status          String    @default("active")
+  metadata        Json?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  @@map("scheduled_tasks")
+  @@schema("planning")
+}
+
+model Conflict {
+  id            String    @id @default(uuid())
+  block_plan_id String
+  block_plan    BlockPlan @relation(fields: [block_plan_id], references: [id])
+  conflict_type String
+  description   String
+  severity      String    @default("medium")
+  is_resolved   Boolean   @default(false)
+  resolved_by   String?
+  resolved_at   DateTime?
+  created_at    DateTime  @default(now())
+
+  @@map("conflicts")
+  @@schema("planning")
+}
+
+model ApprovedBlockPlan {
+  id              String   @id @default(uuid())
+  block_plan_id   String   @unique
+  section         String
+  from_km         Float
+  to_km           Float
+  planned_start   DateTime
+  planned_end     DateTime
+  approved_by     String
+  approved_at     DateTime @default(now())
+  tasks_snapshot  Json?
+  metadata        Json?
+
+  @@map("approved_block_plans")
+  @@schema("planning")
+}
