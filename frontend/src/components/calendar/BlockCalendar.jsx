@@ -1,4 +1,4 @@
-cat > frontend/src/pages/blocks/BlockCalendar.jsx <<'EOF'
+
 import { useMemo, useState } from 'react';
 import {
   Calendar as BigCalendar,
