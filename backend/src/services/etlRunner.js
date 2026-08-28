@@ -210,9 +210,9 @@ async function runEtlLoader() {
     ]);
 
     const results = await Promise.allSettled([
-      ...tmsRecords.map(normalizeTmsDefect),
-      ...tdmsRecords.map(normalizeTdmsDefect),
-      ...smmsRecords.map(normalizeSmmsDefect),
+      ...tmsRecords.map((record) => normalizeTmsDefect(record)),
+      ...tdmsRecords.map((record) => normalizeTdmsDefect(record)),
+      ...smmsRecords.map((record) => normalizeSmmsDefect(record)),
     ]);
 
     const succeeded = results.filter((r) => r.status === 'fulfilled').length;

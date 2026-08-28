@@ -8,6 +8,7 @@
     },
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
+        "seed": "node prisma/seed.js",
         "dev": "node --watch server.js",
         "postinstall": "prisma skills sync || exit 0",
         "start": "node server.js"
@@ -22,8 +23,10 @@
         "bcrypt": "^6.0.0",
         "cors": "^2.8.6",
         "dotenv": "^17.4.2",
+        "exceljs": "4.4.0",
         "express": "^5.2.1",
         "jsonwebtoken": "^9.0.3",
+        "multer": "^2.2.0",
         "node-cron": "^4.6.0",
         "prisma": "^5.22.0",
         "socket.io": "^4.8.3"
