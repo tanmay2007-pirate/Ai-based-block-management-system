@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // server.js — AI Railway Block Management System
 // Express + Socket.IO entry point
 // ============================================================
@@ -19,6 +19,7 @@ const scheduleRoutes  = require('./src/routes/schedule');
 const reportRoutes    = require('./src/routes/reports');
 const etlRoutes       = require('./src/routes/etl');
 const emergencyRoutes = require('./src/routes/emergency');
+const corridorRoutes  = require('./src/routes/corridors');
 
 // Middleware
 const errorHandler = require('./src/middleware/errorHandler');
@@ -109,6 +110,9 @@ app.use('/api/schedule',  scheduleRoutes);
 app.use('/api/reports',   reportRoutes);
 app.use('/api/etl',       etlRoutes);
 app.use('/api/emergency', emergencyRoutes);
+// Exact Phase 4B endpoint alias for emergency-triggered re-planning.
+app.use('/api', emergencyRoutes);
+app.use('/api/corridors', corridorRoutes);
 
 // 404 catch-all for unknown routes
 app.use((req, res) => {
@@ -153,12 +157,20 @@ cron.schedule('0 2 * * *', async () => {
 // ============================================================
 // Start server
 // ============================================================
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`\n╔══════════════════════════════════════════════════╗`);
   console.log(`║  AI Railway Block Management — Backend          ║`);
   console.log(`║  Server running on http://localhost:${PORT}        ║`);
   console.log(`║  Frontend allowed from: ${FRONTEND_URL}  ║`);
   console.log(`╚══════════════════════════════════════════════════╝\n`);
+
+  // Run ETL Loader once on startup (synthetic seed data)
+  try {
+    const { runEtlLoader } = require('./src/services/etlRunner');
+    await runEtlLoader();
+  } catch (err) {
+    console.error('[STARTUP] Failed to seed database:', err);
+  }
 });
 
 // Graceful shutdown

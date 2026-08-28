@@ -1,0 +1,4 @@
+import useFetch from '../hooks/useFetch';
+import { useState } from 'react';
+import CorridorTimeline from '../components/twin/CorridorTimeline';
+export default function DigitalTwin() { const [corridor, setCorridor] = useState('CSMT-Kalyan'); const { data, loading } = useFetch(`/corridors/${encodeURIComponent(corridor)}/timeline`, { trains: [], blocks: [] }); const corridors = [...new Set((data.blocks || []).map(item => item.section).concat(data.corridors || []))]; return <><div className="page-title"><div><span className="eyebrow">NETWORK VISUALIZATION</span><h1>Corridor digital twin</h1></div><select value={corridor} onChange={event => setCorridor(event.target.value)}>{[corridor, ...corridors.filter(item => item !== corridor)].map(item => <option key={item}>{item}</option>)}</select></div><div className="panel"><h3>{corridor} timeline</h3>{loading ? <p>Loading timeline…</p> : <CorridorTimeline trains={data.trains} blocks={data.blocks} />}</div></>; }

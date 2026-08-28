@@ -2,6 +2,7 @@
 const express = require('express');
 const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
+const { scoreDefect, generateSchedule } = require('../services/aiScore');
 
 const router = express.Router();
 
@@ -15,9 +16,46 @@ router.post('/', auth, async (req, res, next) => {
     const notification = await prisma.notification.create({
       data: { type: 'emergency', title, message, related_id },
     });
+
     const io = req.app.get('io');
     if (io) io.emit('emergency-alert', notification);
     res.status(201).json({ notification });
+  } catch (err) { next(err); }
+});
+
+// POST /api/emergency-defect — save, score, and re-plan a critical defect
+router.post('/emergency-defect', auth, async (req, res, next) => {
+  try {
+    const { asset_id, section, severity = 'critical', description, department = req.user.department,
+      days_overdue = 0, traffic_level = 0, asset_type = 'track', criticality = 'critical' } = req.body;
+    if (!asset_id || !section || !description) {
+      return res.status(400).json({ error: 'Bad Request', message: 'asset_id, section, description required' });
+    }
+    const task = await prisma.maintenanceTask.create({
+      data: {
+        source_system: 'emergency', source_id: `emergency-${Date.now()}`, task_type: 'emergency_defect',
+        severity, description, department, asset_id, status: 'pending',
+      },
+    });
+    const score = await scoreDefect({ ...task, criticality, days_overdue, traffic_level, asset_type });
+    const priorityScore = Number(score.priority_score) || 0;
+    let replan = null;
+    if (priorityScore >= 70) {
+      const before = await prisma.blockPlan.findMany({
+        where: { section, planned_end: { gte: new Date() } },
+        include: { trains: true },
+        orderBy: { planned_start: 'asc' },
+      });
+      replan = await generateSchedule({
+        horizon: 'week',
+        tasks: [{ task_id: task.id, corridor_id: section, corridor: section, section,
+          department, severity, priority_score: priorityScore, is_critical: true,
+          estimated_duration_hours: 2, days_overdue, asset_type }],
+      });
+      if (req.app.get('io')) req.app.get('io').emit('schedule-reoptimized',
+        { section, before, after: replan, task_id: task.id });
+    }
+    res.status(201).json({ task, score, replan, reoptimized: Boolean(replan) });
   } catch (err) { next(err); }
 });
 

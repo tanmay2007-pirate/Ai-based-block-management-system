@@ -26,17 +26,33 @@ model User {
 }
 
 model Asset {
-  id          String   @id @default(uuid())
-  asset_code  String   @unique
-  asset_type  String
-  name        String
-  location_km Float?
-  zone        String?
-  division    String?
-  status      String   @default("active")
-  metadata    Json?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id                          String    @id @default(uuid())
+  asset_code                  String    @unique
+  department                  String?
+  asset_type                  String
+  name                        String
+  asset_specification         String?
+  zone                        String?
+  division                    String?
+  section                     String?
+  station_location            String?
+  location_km                 Float?
+  gauge                       String?
+  manufacturer                String?
+  installation_date           DateTime?
+  design_life_years           Int?
+  last_major_maintenance_date  DateTime?
+  last_inspection_date        DateTime?
+  criticality                 String?
+  condition_score             Float?
+  traffic_level               Int?
+  total_past_defects          Int?
+  total_past_failures         Int?
+  status                      String    @default("active")
+  replacement_cost_estimate   Float?
+  metadata                    Json?
+  created_at                  DateTime  @default(now())
+  updated_at                  DateTime  @updatedAt
 
   @@map("assets")
   @@schema("core")
@@ -72,63 +88,83 @@ model Notification {
 }
 
 model TrackMaintenance {
-  id          String    @id @default(uuid())
-  asset_id    String?
-  asset_type  String
-  location_km Float?
-  defect_type String
-  severity    String
-  description String?
-  reported_by String?
-  reported_at DateTime  @default(now())
-  is_deleted  Boolean   @default(false)
-  deleted_at  DateTime?
-  deleted_by  String?
-  created_by  String?
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
+  id                   String    @id @default(uuid())
+  asset_id             String?
+  asset_type           String
+  location_km          Float?
+  defect_type          String
+  severity             String
+  description          String?
+  reported_by          String?
+  reported_at          DateTime  @default(now())
+  is_deleted           Boolean   @default(false)
+  deleted_at           DateTime?
+  deleted_by           String?
+  created_by           String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  criticality          String?
+  overdue_days         Int?
+  preferred_start_time DateTime?
+  preferred_end_time   DateTime?
+  crew_size            Int?
 
   @@map("track_maintenance")
   @@schema("tms")
 }
 
 model TractionMaintenance {
-  id          String    @id @default(uuid())
-  loco_number String
-  loco_type   String
-  defect_type String
-  severity    String
-  description String?
-  depot       String?
-  reported_by String?
-  reported_at DateTime  @default(now())
-  is_deleted  Boolean   @default(false)
-  deleted_at  DateTime?
-  deleted_by  String?
-  created_by  String?
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
+  id                   String    @id @default(uuid())
+  asset_id             String?
+  loco_number          String
+  loco_type            String
+  defect_type          String
+  severity             String
+  description          String?
+  depot                String?
+  reported_by          String?
+  reported_at          DateTime  @default(now())
+  is_deleted           Boolean   @default(false)
+  deleted_at           DateTime?
+  deleted_by           String?
+  created_by           String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  criticality          String?
+  overdue_days         Int?
+  preferred_start_time DateTime?
+  preferred_end_time   DateTime?
+  crew_size            Int?
 
   @@map("traction_maintenance")
   @@schema("tdms")
 }
 
 model SignallingMaintenance {
-  id          String    @id @default(uuid())
-  signal_id   String
-  signal_type String
-  location_km Float?
-  defect_type String
-  severity    String
-  description String?
-  reported_by String?
-  reported_at DateTime  @default(now())
-  is_deleted  Boolean   @default(false)
-  deleted_at  DateTime?
-  deleted_by  String?
-  created_by  String?
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
+  id                   String    @id @default(uuid())
+  asset_id             String?
+  signal_id            String
+  signal_type          String
+  location_km          Float?
+  defect_type          String
+  severity             String
+  description          String?
+  reported_by          String?
+  reported_at          DateTime  @default(now())
+  is_deleted           Boolean   @default(false)
+  deleted_at           DateTime?
+  deleted_by           String?
+  created_by           String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  criticality          String?
+  overdue_days         Int?
+  preferred_start_time DateTime?
+  preferred_end_time   DateTime?
+  crew_size            Int?
 
   @@map("signalling_maintenance")
   @@schema("smms")
@@ -233,15 +269,30 @@ model BlockPlanTrain {
 }
 
 model MaintenanceHistory {
-  id           String          @id @default(uuid())
-  task_id      String
-  action       String
-  old_status   String?
-  new_status   String?
-  notes        String?
-  performed_by String?
-  created_at   DateTime        @default(now())
-  task         MaintenanceTask @relation(fields: [task_id], references: [id])
+  id                         String          @id @default(uuid())
+  task_id                    String?
+  asset_id                   String?
+  division                   String?
+  completed_date             DateTime?
+  estimated_duration_min     Int?
+  actual_repair_duration_min Int?
+  duration_variance_min      Int?
+  was_delayed                Boolean?
+  delay_reason               String?
+  did_fail_within_30_days    Boolean?
+  days_to_failure            Int?
+  crew_size_used             Int?
+  cost_incurred              Float?
+  weather_condition          String?
+  remarks                    String?
+
+  action                     String?
+  old_status                 String?
+  new_status                 String?
+  notes                      String?
+  performed_by               String?
+  created_at                 DateTime        @default(now())
+  task                       MaintenanceTask? @relation(fields: [task_id], references: [id])
 
   @@map("maintenance_history")
   @@schema("planning")

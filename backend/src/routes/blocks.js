@@ -17,7 +17,7 @@ router.get('/', auth, async (req, res, next) => {
 
     const plans = await prisma.blockPlan.findMany({
       where,
-      include: { trains: true, conflicts: true },
+      include: { trains: { include: { task: true } }, conflicts: true },
       orderBy: { planned_start: 'asc' },
     });
     res.json({ plans });
@@ -49,7 +49,10 @@ router.post('/', auth, roleCheck(['control_office', 'admin']), async (req, res, 
                week_end: week_end ? new Date(week_end) : new Date(planned_end), block_demand_id },
     });
     const io = req.app.get('io');
-    if (io) io.emit('block-plan-created', plan);
+    if (io) {
+      io.emit('block-plan-created', plan);
+      io.emit('block-created', plan);
+    }
     res.status(201).json({ plan });
   } catch (err) { next(err); }
 });
@@ -82,7 +85,10 @@ router.patch('/:id/approve', auth, roleCheck(['control_office', 'admin']), async
     });
 
     const io = req.app.get('io');
-    if (io) io.emit('block-plan-approved', updated);
+    if (io) {
+      io.emit('block-plan-approved', updated);
+      io.emit('block-approved', updated);
+    }
     res.json({ message: 'Block plan approved', plan: updated });
   } catch (err) { next(err); }
 });

@@ -1,0 +1,4 @@
+import useFetch from '../hooks/useFetch';
+import AvailabilityChart from '../components/reports/AvailabilityChart';
+import UtilizationChart from '../components/reports/UtilizationChart';
+export default function Reports() { const { data } = useFetch('/reports/summary', {}); return <><div className="page-title"><div><span className="eyebrow">PERFORMANCE</span><h1>Reports</h1></div><span className="muted">Last 30 days</span></div><div className="grid-2"><AvailabilityChart daily={data.availability?.daily} /><div className="panel"><h3>Maintenance completion</h3><div className="big-number">{Object.values(data.completion_by_department || {}).length ? Math.round(Object.values(data.completion_by_department).reduce((sum, value) => sum + value, 0) / Object.values(data.completion_by_department).length) : 0}<span>%</span></div><p className="center muted">Network-wide task completion rate</p></div></div><UtilizationChart values={data.utilization_by_department} /></>; }

@@ -1,0 +1,42 @@
+{
+  "trained_at": "2026-08-28T05:30:15.557381+00:00",
+  "features": [
+    "asset_age_years",
+    "criticality",
+    "total_past_defects",
+    "traffic_level",
+    "severity",
+    "days_overdue",
+    "department",
+    "asset_type"
+  ],
+  "asset_types": [
+    "signal",
+    "track",
+    "traction"
+  ],
+  "numeric_ranges": {
+    "asset_age_years": {
+      "min": 1.1924728833684752,
+      "max": 43.198288861876954
+    },
+    "total_past_defects": {
+      "min": 0.0,
+      "max": 18.0
+    },
+    "traffic_level": {
+      "min": 25.0,
+      "max": 218.0
+    },
+    "days_overdue": {
+      "min": 0.0,
+      "max": 18.0
+    }
+  },
+  "metrics": {
+    "validation_note": "Synthetic-environment validation; not real railway accuracy.",
+    "baseline_accuracy": 0.76,
+    "ai_accuracy": 0.8,
+    "duration_rmse_hours": 0.983
+  }
+}

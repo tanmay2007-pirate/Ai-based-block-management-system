@@ -3,8 +3,37 @@ const express = require('express');
 const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
 const { roleCheck } = require('../middleware/roleCheck');
+const { scoreBatch, explainScore } = require('../services/aiScore');
 
 const router = express.Router();
+
+function taskFeatures(task, asset) {
+  const age = asset && asset.installation_date
+    ? Math.max(0, (Date.now() - new Date(asset.installation_date).getTime()) / (365.25 * 86400000))
+    : 0;
+  return {
+    severity: task.severity, days_overdue: task.days_overdue || 0,
+    asset_criticality: task.criticality || asset?.criticality || 'medium',
+    corridor_traffic: asset?.traffic_level || 0, department: task.department,
+    asset_type: asset?.asset_type || (task.department === 'TMS' ? 'track' : 'signal'),
+    asset_age_years: age, total_past_defects: asset?.total_past_defects || 0,
+  };
+}
+
+// POST /api/tasks/score-all — score pending tasks and persist AI results
+router.post('/score-all', auth, roleCheck(['control_office', 'admin']), async (req, res, next) => {
+  try {
+    const tasks = await prisma.maintenanceTask.findMany({ where: { status: 'pending', is_deleted: false } });
+    const assets = await prisma.asset.findMany({ where: { id: { in: tasks.map((task) => task.asset_id).filter(Boolean) } } });
+    const byId = new Map(assets.map((asset) => [asset.id, asset]));
+    const results = await scoreBatch(tasks.map((task) => taskFeatures(task, byId.get(task.asset_id))));
+    await prisma.$transaction(tasks.map((task, index) => prisma.maintenanceTask.update({
+      where: { id: task.id },
+      data: { priority_score: Number(results[index]?.priority_score || 0), ai_score_data: results[index] || null },
+    })));
+    res.json({ scored: results.length, tasks: results });
+  } catch (err) { next(err); }
+});
 
 // GET /api/tasks — list tasks (filtered by department, status)
 router.get('/', auth, async (req, res, next) => {
@@ -41,8 +70,20 @@ router.get('/:id', auth, async (req, res, next) => {
       where: { id: req.params.id },
       include: { history: true, block_plan_items: { include: { block_plan: true } } },
     });
+
     if (!task) return res.status(404).json({ error: 'Not Found', message: 'Task not found' });
     res.json({ task });
+  } catch (err) { next(err); }
+});
+
+// GET /api/tasks/:id/explain — retrieve an explainable AI breakdown
+router.get('/:id/explain', auth, async (req, res, next) => {
+  try {
+    const task = await prisma.maintenanceTask.findUnique({ where: { id: req.params.id } });
+    if (!task) return res.status(404).json({ error: 'Not Found', message: 'Task not found' });
+    const asset = task.asset_id ? await prisma.asset.findUnique({ where: { id: task.asset_id } }) : null;
+    const explanation = await explainScore(taskFeatures(task, asset));
+    res.json({ task_id: task.id, explanation });
   } catch (err) { next(err); }
 });
 
