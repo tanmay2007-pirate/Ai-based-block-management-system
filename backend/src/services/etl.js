@@ -7,25 +7,26 @@ const prisma = require('../lib/prisma');
 /**
  * Normalize a single TMS defect into planning.maintenance_tasks
  */
-async function normalizeTmsDefect(record) {
-  const existing = await prisma.maintenanceTask.findFirst({
+async function normalizeTmsDefect(record, db = prisma) {
+  const existing = await db.maintenanceTask.findFirst({
     where: { source_system: 'tms', source_id: record.id },
   });
 
   if (existing) {
-    return prisma.maintenanceTask.update({
+    return db.maintenanceTask.update({
       where: { id: existing.id },
       data: {
         severity: record.severity,
         description: record.description,
         location: record.location_km ? `${record.location_km} km` : null,
+        asset_id: record.asset_id,
         is_deleted: record.is_deleted,
         updated_at: new Date(),
       },
     });
   }
 
-  return prisma.maintenanceTask.create({
+  return db.maintenanceTask.create({
     data: {
       source_system: 'tms',
       source_id: record.id,
@@ -42,24 +43,25 @@ async function normalizeTmsDefect(record) {
 /**
  * Normalize a single TDMS defect into planning.maintenance_tasks
  */
-async function normalizeTdmsDefect(record) {
-  const existing = await prisma.maintenanceTask.findFirst({
+async function normalizeTdmsDefect(record, db = prisma) {
+  const existing = await db.maintenanceTask.findFirst({
     where: { source_system: 'tdms', source_id: record.id },
   });
 
   if (existing) {
-    return prisma.maintenanceTask.update({
+    return db.maintenanceTask.update({
       where: { id: existing.id },
       data: {
         severity: record.severity,
         description: record.description,
+        asset_id: record.asset_id,
         is_deleted: record.is_deleted,
         updated_at: new Date(),
       },
     });
   }
 
-  return prisma.maintenanceTask.create({
+  return db.maintenanceTask.create({
     data: {
       source_system: 'tdms',
       source_id: record.id,
@@ -68,6 +70,7 @@ async function normalizeTdmsDefect(record) {
       description: record.description,
       location: record.depot || null,
       department: 'TDMS',
+      asset_id: record.asset_id,
     },
   });
 }
@@ -75,25 +78,26 @@ async function normalizeTdmsDefect(record) {
 /**
  * Normalize a single SMMS defect into planning.maintenance_tasks
  */
-async function normalizeSmmsDefect(record) {
-  const existing = await prisma.maintenanceTask.findFirst({
+async function normalizeSmmsDefect(record, db = prisma) {
+  const existing = await db.maintenanceTask.findFirst({
     where: { source_system: 'smms', source_id: record.id },
   });
 
   if (existing) {
-    return prisma.maintenanceTask.update({
+    return db.maintenanceTask.update({
       where: { id: existing.id },
       data: {
         severity: record.severity,
         description: record.description,
         location: record.location_km ? `${record.location_km} km` : null,
+        asset_id: record.asset_id,
         is_deleted: record.is_deleted,
         updated_at: new Date(),
       },
     });
   }
 
-  return prisma.maintenanceTask.create({
+  return db.maintenanceTask.create({
     data: {
       source_system: 'smms',
       source_id: record.id,
@@ -102,6 +106,7 @@ async function normalizeSmmsDefect(record) {
       description: record.description,
       location: record.location_km ? `${record.location_km} km` : null,
       department: 'SMMS',
+      asset_id: record.asset_id,
     },
   });
 }

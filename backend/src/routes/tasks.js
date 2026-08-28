@@ -51,12 +51,12 @@ router.get('/', auth, async (req, res, next) => {
 
     const [tasks, total] = await Promise.all([
       prisma.maintenanceTask.findMany({
-        where,
+        where: { ...where, is_deleted: false },
         orderBy: { priority_score: 'desc' },
         skip: (parseInt(page) - 1) * parseInt(limit),
         take: parseInt(limit),
       }),
-      prisma.maintenanceTask.count({ where }),
+      prisma.maintenanceTask.count({ where: { ...where, is_deleted: false } }),
     ]);
 
     res.json({ tasks, total, page: parseInt(page), limit: parseInt(limit) });
@@ -67,7 +67,7 @@ router.get('/', auth, async (req, res, next) => {
 router.get('/:id', auth, async (req, res, next) => {
   try {
     const task = await prisma.maintenanceTask.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id, is_deleted: false },
       include: { history: true, block_plan_items: { include: { block_plan: true } } },
     });
 
@@ -79,7 +79,7 @@ router.get('/:id', auth, async (req, res, next) => {
 // GET /api/tasks/:id/explain — retrieve an explainable AI breakdown
 router.get('/:id/explain', auth, async (req, res, next) => {
   try {
-    const task = await prisma.maintenanceTask.findUnique({ where: { id: req.params.id } });
+    const task = await prisma.maintenanceTask.findFirst({ where: { id: req.params.id, is_deleted: false } });
     if (!task) return res.status(404).json({ error: 'Not Found', message: 'Task not found' });
     const asset = task.asset_id ? await prisma.asset.findUnique({ where: { id: task.asset_id } }) : null;
     const explanation = await explainScore(taskFeatures(task, asset));
@@ -98,7 +98,7 @@ router.patch('/:id/status', auth, async (req, res, next) => {
       return res.status(400).json({ error: 'Bad Request', message: `status must be one of: ${VALID_STATUSES.join(', ')}` });
     }
 
-    const existing = await prisma.maintenanceTask.findUnique({ where: { id } });
+    const existing = await prisma.maintenanceTask.findFirst({ where: { id, is_deleted: false } });
     if (!existing) return res.status(404).json({ error: 'Not Found', message: 'Task not found' });
 
     const [task] = await prisma.$transaction([

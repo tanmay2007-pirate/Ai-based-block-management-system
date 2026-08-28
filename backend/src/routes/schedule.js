@@ -36,23 +36,36 @@ function validateProposedChanges(value) {
 }
 
 function schedulePayload(tasks, assets, horizon, proposedChanges) {
-  const byId = new Map(assets.map((asset) => [asset.id, asset]));
+  const byId = new Map(assets.map((asset) => [String(asset.id).trim().toLowerCase(), asset]));
+  const assetForTask = (task) => {
+    if (!task.asset_id) return null;
+    return byId.get(String(task.asset_id).trim().toLowerCase()) || null;
+  };
+
   return {
     horizon,
     proposedChanges,
-    tasks: tasks.map((task) => ({
-      task_id: task.id, corridor_id: byId.get(task.asset_id)?.section || 'unknown',
-      corridor: byId.get(task.asset_id)?.section || 'unknown', department: task.department,
-      severity: task.severity, priority_score: task.priority_score,
-      estimated_duration_hours: task.estimated_hours, is_critical: task.severity === 'critical',
-      asset_type: byId.get(task.asset_id)?.asset_type || 'track',
-    })),
+    tasks: tasks.map((task) => {
+      const asset = assetForTask(task);
+      const section = asset?.section || 'unknown';
+      return {
+        task_id: task.id, corridor_id: section, corridor: section,
+        department: task.department, severity: task.severity, priority_score: task.priority_score,
+        estimated_duration_hours: task.estimated_hours, is_critical: task.severity === 'critical',
+        asset_type: asset?.asset_type || 'track',
+      };
+    }),
   };
 }
 
 async function loadPendingTasks() {
   const tasks = await prisma.maintenanceTask.findMany({ where: { status: 'pending', is_deleted: false } });
-  const assets = await prisma.asset.findMany({ where: { id: { in: tasks.map((task) => task.asset_id).filter(Boolean) } } });
+  const assetIds = tasks.map((task) => task.asset_id).filter(Boolean);
+  let assets = await prisma.asset.findMany({ where: { id: { in: assetIds } } });
+  // Keep the mapping usable when imported identifiers differ only by casing/whitespace.
+  if (assets.length < new Set(assetIds.map((id) => String(id).trim().toLowerCase())).size) {
+    assets = await prisma.asset.findMany();
+  }
   return { tasks, assets };
 }
 
@@ -64,7 +77,7 @@ async function persistSchedule(result, horizon, io) {
         section: block.corridor, from_km: 0, to_km: 0,
         planned_start: new Date(block.start_time), planned_end: new Date(block.end_time),
         week_start: new Date(), week_end: new Date(Date.now() + (horizon === 'month' ? 30 : 7) * 86400000),
-        status: 'PROPOSED', conflict_flags: { source: 'python-ai', metrics: result.metrics },
+        status: 'pending', conflict_flags: { source: 'python-ai', metrics: result.metrics },
         trains: { create: taskIds.filter(Boolean).map((taskId) => ({ task_id: taskId })) },
       },
     });

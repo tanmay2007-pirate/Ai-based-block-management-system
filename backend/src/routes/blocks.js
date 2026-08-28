@@ -6,12 +6,80 @@ const { roleCheck } = require('../middleware/roleCheck');
 
 const router = express.Router();
 
+function normalizeStatus(plan) {
+  const status = String(plan.status || '').toLowerCase();
+  const labels = { pending: 'PROPOSED', proposed: 'PROPOSED', approved: 'APPROVED', rejected: 'REJECTED' };
+  return { ...plan, status: labels[status] || plan.status };
+}
+
+async function transitionPlan(id, requestedStatus, user) {
+  const status = String(requestedStatus).toUpperCase();
+  if (!['APPROVED', 'REJECTED'].includes(status)) {
+    const error = new Error('status must be APPROVED or REJECTED');
+    error.status = 400;
+    throw error;
+  }
+
+  const plan = await prisma.blockPlan.findUnique({ where: { id } });
+  if (!plan) {
+    const error = new Error('Block plan not found');
+    error.status = 404;
+    throw error;
+  }
+
+  const now = new Date();
+  const updated = await prisma.$transaction(async (tx) => {
+    const changed = await tx.blockPlan.update({
+      where: { id },
+      data: {
+        status: status.toLowerCase(),
+        approved_by: status === 'APPROVED' ? user.id : null,
+        approved_at: status === 'APPROVED' ? now : null,
+      },
+      include: { trains: { include: { task: true } }, conflicts: true },
+    });
+    await tx.auditLog.create({
+      data: {
+        action: status === 'APPROVED' ? 'APPROVE' : 'REJECT',
+        table_name: 'planning.block_plans',
+        record_id: id,
+        old_data: plan,
+        new_data: changed,
+        performed_by: user.id,
+        user_id: user.id,
+      },
+    });
+    if (status === 'APPROVED') {
+      await tx.approvedBlockPlan.upsert({
+        where: { block_plan_id: id },
+        update: { approved_by: user.id, approved_at: now },
+        create: {
+          block_plan_id: id,
+          section: plan.section,
+          from_km: plan.from_km,
+          to_km: plan.to_km,
+          planned_start: plan.planned_start,
+          planned_end: plan.planned_end,
+          approved_by: user.id,
+        },
+      });
+    } else {
+      await tx.approvedBlockPlan.deleteMany({ where: { block_plan_id: id } });
+    }
+    return changed;
+  });
+  return updated;
+}
+
 // GET /api/blocks — list all block plans
 router.get('/', auth, async (req, res, next) => {
   try {
     const { status, section, week_start } = req.query;
     const where = {};
-    if (status) where.status = status;
+    if (status) {
+      const storedStatus = { PROPOSED: 'pending', PENDING: 'pending', APPROVED: 'approved', REJECTED: 'rejected' }[String(status).toUpperCase()];
+      where.status = storedStatus || status;
+    }
     if (section) where.section = section;
     if (week_start) where.week_start = { gte: new Date(week_start) };
 
@@ -20,7 +88,7 @@ router.get('/', auth, async (req, res, next) => {
       include: { trains: { include: { task: true } }, conflicts: true },
       orderBy: { planned_start: 'asc' },
     });
-    res.json({ plans });
+    res.json({ plans: plans.map(normalizeStatus) });
   } catch (err) { next(err); }
 });
 
@@ -32,7 +100,7 @@ router.get('/:id', auth, async (req, res, next) => {
       include: { trains: { include: { task: true } }, conflicts: true, block_demand: true },
     });
     if (!plan) return res.status(404).json({ error: 'Not Found', message: 'Block plan not found' });
-    res.json({ plan });
+    res.json({ plan: normalizeStatus(plan) });
   } catch (err) { next(err); }
 });
 
@@ -60,36 +128,21 @@ router.post('/', auth, roleCheck(['control_office', 'admin']), async (req, res, 
 // PATCH /api/blocks/:id/approve — approve a block plan
 router.patch('/:id/approve', auth, roleCheck(['control_office', 'admin']), async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const plan = await prisma.blockPlan.findUnique({ where: { id } });
-    if (!plan) return res.status(404).json({ error: 'Not Found', message: 'Block plan not found' });
-
-    const updated = await prisma.blockPlan.update({
-      where: { id },
-      data: { status: 'approved', approved_by: req.user.id, approved_at: new Date() },
-    });
-
-    // Mirror into approved_block_plans
-    await prisma.approvedBlockPlan.upsert({
-      where: { block_plan_id: id },
-      update: { approved_by: req.user.id, approved_at: new Date() },
-      create: {
-        block_plan_id: id,
-        section: plan.section,
-        from_km: plan.from_km,
-        to_km: plan.to_km,
-        planned_start: plan.planned_start,
-        planned_end: plan.planned_end,
-        approved_by: req.user.id,
-      },
-    });
-
+    const updated = await transitionPlan(req.params.id, 'APPROVED', req.user);
     const io = req.app.get('io');
-    if (io) {
-      io.emit('block-plan-approved', updated);
-      io.emit('block-approved', updated);
-    }
-    res.json({ message: 'Block plan approved', plan: updated });
+    if (io) io.emit('block-approved', normalizeStatus(updated));
+    res.json({ message: 'Block plan approved', plan: normalizeStatus(updated) });
+  } catch (err) { next(err); }
+});
+
+// PATCH /api/blocks/:id — approve or reject a proposed block plan
+router.patch('/:id', auth, roleCheck(['control_office', 'admin']), async (req, res, next) => {
+  try {
+    const updated = await transitionPlan(req.params.id, req.body.status, req.user);
+    const publicPlan = normalizeStatus(updated);
+    const io = req.app.get('io');
+    if (io) io.emit(publicPlan.status === 'APPROVED' ? 'block-approved' : 'block-rejected', publicPlan);
+    res.json({ message: `Block plan ${publicPlan.status.toLowerCase()}`, plan: publicPlan });
   } catch (err) { next(err); }
 });
 
