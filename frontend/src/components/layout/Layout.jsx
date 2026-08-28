@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Outlet } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { API } from '../../services/api';
 import Sidebar from './Sidebar';
