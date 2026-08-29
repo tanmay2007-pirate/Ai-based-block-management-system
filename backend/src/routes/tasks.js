@@ -3,7 +3,7 @@ const express = require('express');
 const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
 const { roleCheck } = require('../middleware/roleCheck');
-const { scoreBatch, explainScore } = require('../services/aiScore');
+const { scoreBatch, explainScore, fallbackPriorityScore } = require('../services/aiScore');
 
 const router = express.Router();
 
@@ -59,7 +59,24 @@ router.get('/', auth, async (req, res, next) => {
       prisma.maintenanceTask.count({ where: { ...where, is_deleted: false } }),
     ]);
 
-    res.json({ tasks, total, page: parseInt(page), limit: parseInt(limit) });
+    const tasksWithScores = tasks.map((task) => {
+      const priorityScore = Number(task.priority_score ?? 0);
+      return {
+        ...task,
+        priority_score: priorityScore > 0 ? priorityScore : fallbackPriorityScore({
+          severity: task.severity,
+          department: task.department,
+          days_overdue: task.days_overdue || 0,
+          asset_criticality: task.asset_criticality || 'medium',
+          criticality: task.criticality || 'medium',
+          corridor_traffic: task.traffic_level || 0,
+          asset_age_years: 0,
+          total_past_defects: task.total_past_defects || 0,
+        }),
+      };
+    });
+
+    res.json({ tasks: tasksWithScores, total, page: parseInt(page), limit: parseInt(limit) });
   } catch (err) { next(err); }
 });
 
