@@ -28,31 +28,31 @@ model User {
 model Asset {
   id                          String    @id @default(uuid())
   asset_code                  String    @unique
-  department                  String?
   asset_type                  String
   name                        String
-  asset_specification         String?
+  location_km                 Float?
   zone                        String?
   division                    String?
-  section                     String?
-  station_location            String?
-  location_km                 Float?
-  gauge                       String?
-  manufacturer                String?
-  installation_date           DateTime?
-  design_life_years           Int?
-  last_major_maintenance_date  DateTime?
-  last_inspection_date        DateTime?
-  criticality                 String?
-  condition_score             Float?
-  traffic_level               Int?
-  total_past_defects          Int?
-  total_past_failures         Int?
   status                      String    @default("active")
-  replacement_cost_estimate   Float?
   metadata                    Json?
   created_at                  DateTime  @default(now())
   updated_at                  DateTime  @updatedAt
+  asset_specification         String?
+  condition_score             Float?
+  criticality                 String?
+  department                  String?
+  design_life_years           Int?
+  gauge                       String?
+  installation_date           DateTime?
+  last_inspection_date        DateTime?
+  last_major_maintenance_date DateTime?
+  manufacturer                String?
+  replacement_cost_estimate   Float?
+  section                     String?
+  station_location            String?
+  total_past_defects          Int?
+  total_past_failures         Int?
+  traffic_level               Int?
 
   @@map("assets")
   @@schema("core")
@@ -103,12 +103,11 @@ model TrackMaintenance {
   created_by           String?
   created_at           DateTime  @default(now())
   updated_at           DateTime  @updatedAt
-
+  crew_size            Int?
   criticality          String?
   overdue_days         Int?
-  preferred_start_time DateTime?
   preferred_end_time   DateTime?
-  crew_size            Int?
+  preferred_start_time DateTime?
 
   @@map("track_maintenance")
   @@schema("tms")
@@ -116,7 +115,6 @@ model TrackMaintenance {
 
 model TractionMaintenance {
   id                   String    @id @default(uuid())
-  asset_id             String?
   loco_number          String
   loco_type            String
   defect_type          String
@@ -131,12 +129,12 @@ model TractionMaintenance {
   created_by           String?
   created_at           DateTime  @default(now())
   updated_at           DateTime  @updatedAt
-
+  asset_id             String?
+  crew_size            Int?
   criticality          String?
   overdue_days         Int?
-  preferred_start_time DateTime?
   preferred_end_time   DateTime?
-  crew_size            Int?
+  preferred_start_time DateTime?
 
   @@map("traction_maintenance")
   @@schema("tdms")
@@ -144,7 +142,6 @@ model TractionMaintenance {
 
 model SignallingMaintenance {
   id                   String    @id @default(uuid())
-  asset_id             String?
   signal_id            String
   signal_type          String
   location_km          Float?
@@ -159,12 +156,12 @@ model SignallingMaintenance {
   created_by           String?
   created_at           DateTime  @default(now())
   updated_at           DateTime  @updatedAt
-
+  asset_id             String?
+  crew_size            Int?
   criticality          String?
   overdue_days         Int?
-  preferred_start_time DateTime?
   preferred_end_time   DateTime?
-  crew_size            Int?
+  preferred_start_time DateTime?
 
   @@map("signalling_maintenance")
   @@schema("smms")
@@ -269,29 +266,28 @@ model BlockPlanTrain {
 }
 
 model MaintenanceHistory {
-  id                         String          @id @default(uuid())
+  id                         String           @id @default(uuid())
   task_id                    String?
-  asset_id                   String?
-  division                   String?
-  completed_date             DateTime?
-  estimated_duration_min     Int?
-  actual_repair_duration_min Int?
-  duration_variance_min      Int?
-  was_delayed                Boolean?
-  delay_reason               String?
-  did_fail_within_30_days    Boolean?
-  days_to_failure            Int?
-  crew_size_used             Int?
-  cost_incurred              Float?
-  weather_condition          String?
-  remarks                    String?
-
   action                     String?
   old_status                 String?
   new_status                 String?
   notes                      String?
   performed_by               String?
-  created_at                 DateTime        @default(now())
+  created_at                 DateTime         @default(now())
+  actual_repair_duration_min Int?
+  asset_id                   String?
+  completed_date             DateTime?
+  cost_incurred              Float?
+  crew_size_used             Int?
+  days_to_failure            Int?
+  delay_reason               String?
+  did_fail_within_30_days    Boolean?
+  division                   String?
+  duration_variance_min      Int?
+  estimated_duration_min     Int?
+  remarks                    String?
+  was_delayed                Boolean?
+  weather_condition          String?
   task                       MaintenanceTask? @relation(fields: [task_id], references: [id])
 
   @@map("maintenance_history")
