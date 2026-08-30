@@ -272,7 +272,27 @@ async function writeAuditLog({ action, table_name, record_id, old_data, new_data
 
 async function applyAiScore(task) {
   try {
-    const scoreResult = await scoreDefect(task);
+    const asset = task.asset_id ? await prisma.asset.findUnique({ where: { id: task.asset_id } }) : null;
+    const source = task.source_system === 'tms'
+      ? await prisma.trackMaintenance.findUnique({ where: { id: task.source_id } })
+      : task.source_system === 'tdms'
+        ? await prisma.tractionMaintenance.findUnique({ where: { id: task.source_id } })
+        : task.source_system === 'smms'
+          ? await prisma.signallingMaintenance.findUnique({ where: { id: task.source_id } })
+          : null;
+    const assetAgeYears = asset?.installation_date
+      ? Math.max(0, (Date.now() - new Date(asset.installation_date).getTime()) / (365.25 * 86400000))
+      : 0;
+    const scoreResult = await scoreDefect({
+      ...task,
+      asset_type: source?.asset_type || asset?.asset_type,
+      criticality: source?.criticality || asset?.criticality,
+      asset_criticality: source?.criticality || asset?.criticality,
+      days_overdue: source?.overdue_days || 0,
+      traffic_level: asset?.traffic_level || 0,
+      asset_age_years: assetAgeYears,
+      total_past_defects: asset?.total_past_defects || 0,
+    });
     if (scoreResult?.priority_score === undefined) return task;
 
     const scoredTask = await prisma.maintenanceTask.update({

@@ -31,10 +31,10 @@ async function scoreDefect(task) {
     department: task.department,
     description: task.description,
     asset_type: task.asset_type || (task.department === 'TMS' ? 'track' : 'signal'),
-    criticality: task.criticality || 'critical',
-    asset_criticality: task.criticality || 'critical',
+    criticality: task.criticality || task.asset_criticality || 'medium',
+    asset_criticality: task.asset_criticality || task.criticality || 'medium',
     days_overdue: task.days_overdue || 0,
-    corridor_traffic: task.traffic_level || 0,
+    corridor_traffic: task.traffic_level || task.corridor_traffic || 0,
     asset_age_years: task.asset_age_years || 0,
     total_past_defects: task.total_past_defects || 0,
   });
@@ -44,12 +44,13 @@ function generateSchedule(payload) {
   return postToAi('/generate-schedule', payload);
 }
 
-function explainScore(task) {
+async function explainScore(task) {
   return postToAi('/explain-score', {
     severity: task.severity || 'medium',
     days_overdue: task.days_overdue || 0,
-    asset_criticality: task.criticality || 'medium',
-    corridor_traffic: task.traffic_level || 0,
+    asset_criticality: task.asset_criticality || task.criticality || 'medium',
+    criticality: task.criticality || task.asset_criticality || 'medium',
+    corridor_traffic: task.traffic_level || task.corridor_traffic || 0,
     department: task.department || 'TMS',
     asset_type: task.asset_type || 'track',
     asset_age_years: task.asset_age_years || 0,

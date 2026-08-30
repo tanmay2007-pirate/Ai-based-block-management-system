@@ -7,16 +7,31 @@ const { scoreBatch, explainScore } = require('../services/aiScore');
 
 const router = express.Router();
 
-function taskFeatures(task, asset) {
+async function loadSourceRecord(task, db = prisma) {
+  const source = String(task.source_system || '').toLowerCase();
+  if (source === 'tms') return db.trackMaintenance.findUnique({ where: { id: task.source_id } });
+  if (source === 'tdms') return db.tractionMaintenance.findUnique({ where: { id: task.source_id } });
+  if (source === 'smms') return db.signallingMaintenance.findUnique({ where: { id: task.source_id } });
+  return null;
+}
+
+function taskFeatures(task, asset, sourceRecord = null) {
   const age = asset && asset.installation_date
     ? Math.max(0, (Date.now() - new Date(asset.installation_date).getTime()) / (365.25 * 86400000))
     : 0;
+  const preferredStart = sourceRecord?.preferred_start_time ? new Date(sourceRecord.preferred_start_time) : null;
+  const preferredEnd = sourceRecord?.preferred_end_time ? new Date(sourceRecord.preferred_end_time) : null;
+  const estimatedHours = preferredStart && preferredEnd && preferredEnd > preferredStart
+    ? (preferredEnd - preferredStart) / 3600000
+    : task.estimated_hours;
   return {
-    severity: task.severity, days_overdue: task.days_overdue || 0,
-    asset_criticality: task.criticality || asset?.criticality || 'medium',
+    severity: task.severity, days_overdue: sourceRecord?.overdue_days || 0,
+    asset_criticality: sourceRecord?.criticality || asset?.criticality || 'medium',
+    criticality: sourceRecord?.criticality || asset?.criticality || 'medium',
     corridor_traffic: asset?.traffic_level || 0, department: task.department,
     asset_type: asset?.asset_type || (task.department === 'TMS' ? 'track' : 'signal'),
     asset_age_years: age, total_past_defects: asset?.total_past_defects || 0,
+    estimated_duration_hours: estimatedHours,
   };
 }
 
@@ -26,7 +41,11 @@ router.post('/score-all', auth, roleCheck(['control_office', 'admin']), async (r
     const tasks = await prisma.maintenanceTask.findMany({ where: { status: 'pending', is_deleted: false } });
     const assets = await prisma.asset.findMany({ where: { id: { in: tasks.map((task) => task.asset_id).filter(Boolean) } } });
     const byId = new Map(assets.map((asset) => [asset.id, asset]));
-    const results = await scoreBatch(tasks.map((task) => taskFeatures(task, byId.get(task.asset_id))));
+    const features = await Promise.all(tasks.map(async (task) => {
+      const sourceRecord = await loadSourceRecord(task);
+      return taskFeatures(task, byId.get(task.asset_id), sourceRecord);
+    }));
+    const results = await scoreBatch(features);
     await prisma.$transaction(tasks.map((task, index) => prisma.maintenanceTask.update({
       where: { id: task.id },
       data: { priority_score: Number(results[index]?.priority_score || 0), ai_score_data: results[index] || null },
@@ -82,8 +101,10 @@ router.get('/:id/explain', auth, async (req, res, next) => {
     const task = await prisma.maintenanceTask.findFirst({ where: { id: req.params.id, is_deleted: false } });
     if (!task) return res.status(404).json({ error: 'Not Found', message: 'Task not found' });
     const asset = task.asset_id ? await prisma.asset.findUnique({ where: { id: task.asset_id } }) : null;
-    const explanation = await explainScore(taskFeatures(task, asset));
-    res.json({ task_id: task.id, explanation });
+    const sourceRecord = await loadSourceRecord(task);
+    const features = taskFeatures(task, asset, sourceRecord);
+    const explanation = await explainScore(features);
+    res.json({ task_id: task.id, task, features, explanation });
   } catch (err) { next(err); }
 });
 
