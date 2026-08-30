@@ -1,20 +1,72 @@
 import { NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+
 import useFetch from '../hooks/useFetch';
 
-function Stat({ label, value, tone = '', icon, description }) {
+
+
+function AnimatedNumber({ value, duration = 900 }) {
+  const target = Number(value);
+
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    if (!Number.isFinite(target)) {
+      setDisplayValue(value);
+      return;
+    }
+
+    let startTime = null;
+    let animationFrame;
+
+    const animate = timestamp => {
+      if (!startTime) startTime = timestamp;
+
+      const progress = Math.min(
+        (timestamp - startTime) / duration,
+        1
+      );
+
+      // Smooth ease-out animation
+      const eased =
+        1 - Math.pow(1 - progress, 3);
+
+      setDisplayValue(
+        Math.round(target * eased)
+      );
+
+      if (progress < 1) {
+        animationFrame =
+          requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrame =
+      requestAnimationFrame(animate);
+
+    return () =>
+      cancelAnimationFrame(animationFrame);
+  }, [target, duration, value]);
+
+  return <>{displayValue}</>;
+}
+
+function Stat({ label, value, tone = '', icon }) {
   return (
-    <div className={`overview-stat ${tone}`}>
-      <div className="overview-stat-header">
+    <div className="stat-card enhanced-stat">
+      <div className="stat-top">
         <span>{label}</span>
-        <div className="overview-stat-icon">{icon}</div>
+
+        <div className={`stat-icon ${tone}`}>
+          {icon}
+        </div>
       </div>
 
-      <strong>{value}</strong>
+      <strong className={tone}>
+        <AnimatedNumber value={value} />
+      </strong>
 
-      <div className="overview-stat-footer">
-        <span>{description}</span>
-        <span className="stat-live-dot">LIVE</span>
-      </div>
+      <small>Updated just now</small>
     </div>
   );
 }
@@ -46,10 +98,17 @@ export default function Overview() {
     <>
       {/* HEADER */}
       <section className="overview-hero">
+
         <div className="overview-hero-copy">
           <span className="eyebrow">RAILWAY OPERATIONS CONTROL</span>
 
-          <h1>Network operations overview</h1>
+          <div className="hero-title-stage">
+
+            <h1 className="overview-typed-title">
+              <span className="typed-title-text">Network operations overview</span>
+              <span className="typed-title-cursor" aria-hidden="true"></span>
+            </h1>
+          </div>
 
           <p>
             Monitor maintenance activity, railway blocks and operational risk
