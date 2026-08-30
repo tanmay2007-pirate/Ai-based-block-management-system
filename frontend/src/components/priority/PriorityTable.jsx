@@ -5,7 +5,16 @@ import { useAuth } from '../../context/AuthContext';
 import AddDefectForm from '../defects/AddDefectForm';
 import BulkUploadModal from '../defects/BulkUploadModal';
 
-function PriorityBadge({ score }) {
+function PriorityBadge({ score, hasBackendScore }) {
+  if (!hasBackendScore) {
+    return (
+      <div className="priority-score low">
+        <strong>--</strong>
+        <span>MISSING BACKEND DATA</span>
+      </div>
+    );
+  }
+
   const value = Number(score) || 0;
 
   let tone = 'low';
@@ -64,7 +73,7 @@ function StatusBadge({ status }) {
 
 export default function PriorityTable() {
   const { session } = useAuth();
-  const { data, loading } = useFetch(
+  const { data, loading, error } = useFetch(
     '/tasks?status=pending&limit=100',
     { tasks: [] }
   );
@@ -104,17 +113,21 @@ export default function PriorityTable() {
   }, [allTasks, department, severity, sortHighFirst]);
 
   const summary = useMemo(() => {
+    const scoredTasks = allTasks.filter(
+      task => Boolean(task.ai_score_data) || Number(task.priority_score) > 0
+    );
+
     const critical = allTasks.filter(
-      task => Number(task.priority_score) >= 80
+      task => (Boolean(task.ai_score_data) || Number(task.priority_score) > 0) && Number(task.priority_score) >= 80
     ).length;
 
-    const medium = allTasks.filter(task => {
+    const medium = scoredTasks.filter(task => {
       const score = Number(task.priority_score) || 0;
       return score >= 50 && score < 80;
     }).length;
 
-    const low = allTasks.filter(
-      task => (Number(task.priority_score) || 0) < 50
+    const low = scoredTasks.filter(
+      task => Number(task.priority_score) < 50
     ).length;
 
     return {
@@ -336,6 +349,7 @@ export default function PriorityTable() {
                     <td>
                       <PriorityBadge
                         score={task.priority_score}
+                        hasBackendScore={Boolean(task.ai_score_data) || Number(task.priority_score) > 0}
                       />
                     </td>
 
@@ -372,6 +386,13 @@ export default function PriorityTable() {
                 There are no tasks matching the current
                 filters.
               </p>
+            </div>
+          )}
+          {error && (
+            <div className="priority-empty">
+              <div className="priority-empty-icon">!</div>
+              <h3>Unable to load maintenance priorities</h3>
+              <p>{error}</p>
             </div>
           )}
         </div>

@@ -7,6 +7,9 @@ function scoreValue(data) {
     data?.priority_score ??
     data?.priorityScore ??
     data?.score ??
+    data?.explanation?.score?.result?.priority_score ??
+    data?.explanation?.score?.priority_score ??
+    data?.explanation?.result?.priority_score ??
     data?.task?.priority_score ??
     0
   );
@@ -73,7 +76,22 @@ export default function ExplainPanel({ taskId: providedTaskId, onClose }) {
   const score = useMemo(() => scoreValue(data), [data]);
   const priority = getPriority(score);
   const taskName = task.description || task.location || data?.description || 'Maintenance task';
-  const department = task.department || data?.department || 'Engineering';
+  const department = task.department || data?.department || data?.features?.department || 'MISSING BACKEND DATA';
+  const explanation = data?.explanation || {};
+  const scoreResult = explanation?.score?.result || explanation?.score || explanation?.result || {};
+  const backendFactors = Object.entries(scoreResult.baseline_components || {})
+    .map(([name, value]) => ({
+      title: name.replaceAll('_', ' '),
+      value: String(value),
+      text: 'Backend scoring component returned by the AI service.'
+    }));
+  const contributionFactors = (explanation.feature_contributions || [])
+    .map(item => ({
+      title: String(item).replaceAll('_', ' '),
+      value: 'AI contribution',
+      text: 'Feature identified by the AI explanation endpoint.'
+    }));
+  const factors = backendFactors.length ? backendFactors : contributionFactors;
 
   if (!taskId) return null;
 
@@ -149,9 +167,22 @@ export default function ExplainPanel({ taskId: providedTaskId, onClose }) {
             </div>
 
             <div className="explain-factors">
-              <Factor number="01" title="Safety severity" value={task.severity || 'High'} text="Infrastructure safety and defect severity are weighted heavily because unresolved railway defects can create direct operational risk." />
-              <Factor number="02" title="Operational impact" value="Network impact" text="The planning engine considers how maintenance activity could affect railway sections, train movements and available operating capacity." />
-              <Factor number="03" title="Maintenance urgency" value={department} text="The asset or service affected determines the operational urgency of the repair and the scheduling priority against overall network demand." />
+              {factors.length ? factors.slice(0, 5).map((factor, index) => (
+                <Factor
+                  key={`${factor.title}-${index}`}
+                  number={String(index + 1).padStart(2, '0')}
+                  title={factor.title}
+                  value={factor.value}
+                  text={factor.text}
+                />
+              )) : (
+                <Factor
+                  number="01"
+                  title="MISSING BACKEND DATA"
+                  value={explanation.explanation_method || scoreResult.scoring_method || ''}
+                  text="The backend returned an explanation without feature contributions or scoring components."
+                />
+              )}
             </div>
           </div>
         </div>
@@ -160,14 +191,15 @@ export default function ExplainPanel({ taskId: providedTaskId, onClose }) {
           <div className="panel explain-summary">
             <span className="eyebrow">AI SUMMARY</span>
             <h2>Priority insight</h2>
-            <p>This task is considered a {priority.toLowerCase()} priority because the current asset condition, safety implications, and network disruption profile exceed the threshold for routine maintenance scheduling.</p>
+            <p>{explanation.explanation || scoreResult.confidence_reason || 'MISSING BACKEND DATA'}</p>
           </div>
 
           <div className="panel explain-metrics">
             <span className="eyebrow">EVALUATION METRICS</span>
-            <Metric label="Severity" value={task.severity || 'HIGH'} description="Defect criticality" />
+            <Metric label="Severity" value={task.severity || data?.features?.severity || 'MISSING BACKEND DATA'} description="Defect criticality" />
             <Metric label="Department" value={department} description="Responsible maintenance team" />
             <Metric label="Priority score" value={`${Math.round(score)} / 100`} description="AI ranking" />
+            <Metric label="Method" value={scoreResult.scoring_method || explanation.explanation_method || 'MISSING BACKEND DATA'} description="Backend scoring source" />
           </div>
         </div>
       </div>

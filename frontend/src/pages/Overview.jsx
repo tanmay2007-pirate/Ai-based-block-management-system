@@ -36,7 +36,11 @@ function StatusRow({ label, status, detail }) {
 }
 
 export default function Overview() {
-  const { data } = useFetch('/reports/summary', {});
+  const { data, error: summaryError } = useFetch('/reports/summary', {});
+  const { data: health, error: healthError } = useFetch('/health', {});
+  const networkAvailability = data.availability?.network_average;
+  const apiStatus = health?.status === 'ok' ? 'Operational' : healthError ? 'Unavailable' : 'Checking';
+  const databaseStatus = health?.database || (healthError ? 'Unavailable' : 'Checking');
 
   return (
     <>
@@ -58,7 +62,7 @@ export default function Overview() {
             <i />
             <div>
               <strong>Systems operational</strong>
-              <span>Live planning environment</span>
+              <span>{health?.timestamp ? `Backend checked ${new Date(health.timestamp).toLocaleTimeString()}` : apiStatus}</span>
             </div>
           </div>
 
@@ -116,7 +120,7 @@ export default function Overview() {
 
             <span className="ai-ready">
               <i />
-              AI READY
+              {healthError ? 'API UNAVAILABLE' : 'API DATA'}
             </span>
           </div>
 
@@ -185,26 +189,26 @@ export default function Overview() {
           <div className="network-status-list">
             <StatusRow
               label="Planning engine"
-              detail="AI scheduling services"
-              status="Operational"
+              detail="Backend planning API"
+              status={apiStatus}
             />
 
             <StatusRow
               label="Live data stream"
-              detail="Operational network feed"
-              status="Connected"
+              detail="No live-feed health endpoint exposed"
+              status="Not verified"
             />
 
             <StatusRow
               label="Conflict detection"
-              detail="Train / block analysis"
-              status="Active"
+              detail="Stored conflict records"
+              status={summaryError ? 'Unavailable' : 'Data-backed'}
             />
 
             <StatusRow
               label="Database"
               detail="Planning data services"
-              status="Healthy"
+              status={databaseStatus}
             />
           </div>
         </div>
@@ -249,8 +253,8 @@ export default function Overview() {
           <div className="operation-metric">
             <span className="operation-icon blue">↗</span>
             <div>
-              <strong>24/7</strong>
-              <span>Monitoring status</span>
+              <strong>{networkAvailability === undefined ? 'â€”' : `${Number(networkAvailability).toFixed(1)}%`}</strong>
+              <span>Network availability</span>
             </div>
           </div>
         </div>

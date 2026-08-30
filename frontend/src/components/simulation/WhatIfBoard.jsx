@@ -31,7 +31,7 @@ function Metric({ label, value, unit = '', tone = '' }) {
 }
 
 export default function WhatIfBoard() {
-  const { data } = useFetch('/blocks', { plans: [] });
+  const { data, error: blocksError } = useFetch('/blocks', { plans: [] });
 
   const [selectedPlans, setSelectedPlans] = useState([]);
   const [result, setResult] = useState(null);
@@ -193,7 +193,7 @@ export default function WhatIfBoard() {
           <button
             className="primary"
             onClick={simulate}
-            disabled={loading || !hasChanges}
+            disabled={loading || !hasChanges || Boolean(blocksError)}
           >
             {loading ? 'Running simulation…' : 'Run simulation'}
           </button>
@@ -261,19 +261,26 @@ export default function WhatIfBoard() {
           </div>
 
           <div className="simulation-calendar">
-            <DnDCalendar
-              localizer={localizer}
-              events={events}
-              startAccessor="start"
-              endAccessor="end"
-              onEventDrop={onDrop}
-              onSelectEvent={event =>
-                togglePlan(event.resource)
-              }
-              resizable={false}
-              popup
-              style={{ height: 590 }}
-            />
+            {blocksError ? (
+              <div className="scenario-empty">
+                <strong>Unable to load block plans</strong>
+                <p>{blocksError}</p>
+              </div>
+            ) : (
+              <DnDCalendar
+                localizer={localizer}
+                events={events}
+                startAccessor="start"
+                endAccessor="end"
+                onEventDrop={onDrop}
+                onSelectEvent={event =>
+                  togglePlan(event.resource)
+                }
+                resizable={false}
+                popup
+                style={{ height: 590 }}
+              />
+            )}
           </div>
         </div>
 

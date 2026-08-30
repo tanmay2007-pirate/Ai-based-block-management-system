@@ -17,20 +17,20 @@ function MetricCard({ label, value, suffix = '', tone = '', detail }) {
 }
 
 export default function Reports() {
-  const { data, loading } = useFetch('/reports/summary', {});
+  const { data, loading, error } = useFetch('/reports/summary', {});
 
   const completion = useMemo(() => {
     const values = Object.values(data.completion_by_department || {});
     return values.length
       ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)
-      : 0;
+      : null;
   }, [data]);
 
   const availability = data.availability?.daily || [];
 
   const latestAvailability = availability.length
     ? Number(availability[availability.length - 1].availability_percentage || 0)
-    : 0;
+    : null;
 
   const utilization = Object.values(data.utilization_by_department || {});
   const averageUtilization = utilization.length
@@ -38,7 +38,9 @@ export default function Reports() {
         utilization.reduce((sum, value) => sum + Number(value || 0), 0) /
           utilization.length
       )
-    : 0;
+    : null;
+
+  const valueOrMissing = value => value ?? 'MISSING BACKEND DATA';
 
   return (
     <>
@@ -64,24 +66,24 @@ export default function Reports() {
       <div className="report-metrics">
         <MetricCard
           label="Network availability"
-          value={latestAvailability}
-          suffix="%"
+          value={valueOrMissing(latestAvailability)}
+          suffix={latestAvailability === null ? '' : '%'}
           tone="green"
           detail="Latest recorded availability"
         />
 
         <MetricCard
           label="Task completion"
-          value={completion}
-          suffix="%"
+          value={valueOrMissing(completion)}
+          suffix={completion === null ? '' : '%'}
           tone="blue"
           detail="Average across departments"
         />
 
         <MetricCard
           label="Block utilization"
-          value={averageUtilization}
-          suffix="%"
+          value={valueOrMissing(averageUtilization)}
+          suffix={averageUtilization === null ? '' : '%'}
           tone="orange"
           detail="Average planned utilization"
         />
@@ -94,7 +96,12 @@ export default function Reports() {
         />
       </div>
 
-      {loading ? (
+      {error ? (
+        <div className="panel reports-loading">
+          <strong>Unable to load network analytics</strong>
+          <span>{error}</span>
+        </div>
+      ) : loading ? (
         <div className="panel reports-loading">
           <div className="loading-ring" />
           <strong>Loading network analytics…</strong>
@@ -110,7 +117,7 @@ export default function Reports() {
                   <h2>Asset availability</h2>
                 </div>
                 <span className="report-value-pill green">
-                  {latestAvailability}%
+                  {latestAvailability === null ? 'MISSING BACKEND DATA' : `${latestAvailability}%`}
                 </span>
               </div>
 
@@ -128,17 +135,17 @@ export default function Reports() {
                   <h2>Completion rate</h2>
                 </div>
                 <span className="report-value-pill blue">
-                  {completion}%
+                  {completion === null ? 'MISSING BACKEND DATA' : `${completion}%`}
                 </span>
               </div>
 
               <div className="completion-display">
                 <div
                   className="completion-ring"
-                  style={{ '--completion': `${completion * 3.6}deg` }}
+                  style={{ '--completion': `${(completion || 0) * 3.6}deg` }}
                 >
                   <div>
-                    <strong>{completion}%</strong>
+                    <strong>{completion === null ? '--' : `${completion}%`}</strong>
                     <span>completed</span>
                   </div>
                 </div>
@@ -158,7 +165,7 @@ export default function Reports() {
               </div>
 
               <span className="report-value-pill orange">
-                {averageUtilization}% avg
+                {averageUtilization === null ? 'MISSING BACKEND DATA' : `${averageUtilization}% avg`}
               </span>
             </div>
 

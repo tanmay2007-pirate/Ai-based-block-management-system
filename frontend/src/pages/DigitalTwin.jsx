@@ -5,7 +5,7 @@ import CorridorTimeline from '../components/twin/CorridorTimeline';
 export default function DigitalTwin() {
   const [corridor, setCorridor] = useState('CSMT-Kalyan');
 
-  const { data, loading } = useFetch(
+  const { data, loading, error } = useFetch(
     `/corridors/${encodeURIComponent(corridor)}/timeline`,
     {
       trains: [],
@@ -106,7 +106,11 @@ export default function DigitalTwin() {
           </span>
         </div>
 
-        {loading ? (
+        {error ? (
+          <div className="empty">
+            <p>{error}</p>
+          </div>
+        ) : loading ? (
           <div className="empty">
             <p>Loading corridor telemetry…</p>
           </div>

@@ -36,7 +36,7 @@ function StatusBadge({ status }) {
 }
 
 export default function BlockCalendar() {
-  const { data, loading } = useFetch('/blocks', { plans: [] });
+  const { data, loading, error } = useFetch('/blocks', { plans: [] });
   const [selected, setSelected] = useState(null);
   const [showExplainTaskId, setShowExplainTaskId] = useState(null);
   const [view, setView] = useState(Views.WEEK);
@@ -207,7 +207,12 @@ export default function BlockCalendar() {
         <div className="calendar-divider" />
 
         <div className="calendar-shell">
-          {loading ? (
+          {error ? (
+            <div className="calendar-loading">
+              <strong>Unable to load operational blocks</strong>
+              <span>{error}</span>
+            </div>
+          ) : loading ? (
             <div className="calendar-loading">
               <div className="loading-ring" />
               <strong>Loading operational blocks…</strong>
