@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import useFetch from '../../hooks/useFetch';
+import { useAuth } from '../../context/AuthContext';
+import AddDefectForm from '../defects/AddDefectForm';
+import BulkUploadModal from '../defects/BulkUploadModal';
 
 function PriorityBadge({ score }) {
   const value = Number(score) || 0;
@@ -60,6 +63,7 @@ function StatusBadge({ status }) {
 }
 
 export default function PriorityTable() {
+  const { session } = useAuth();
   const { data, loading } = useFetch(
     '/tasks?status=pending&limit=100',
     { tasks: [] }
@@ -68,6 +72,12 @@ export default function PriorityTable() {
   const [department, setDepartment] = useState('');
   const [severity, setSeverity] = useState('');
   const [sortHighFirst, setSortHighFirst] = useState(true);
+  const [entryOpen, setEntryOpen] = useState(false);
+
+  const canReportDefect = ['engineering', 'traction', 'signal']
+    .includes(session?.user?.role);
+
+  const refreshTasks = () => window.dispatchEvent(new Event('railway-refresh'));
 
   const allTasks = data?.tasks || [];
 
@@ -141,7 +151,40 @@ export default function PriorityTable() {
           <i />
           PRIORITIZATION ENGINE LIVE
         </div>
+
+        {canReportDefect && (
+          <button
+            type="button"
+            className="priority-entry-button"
+            onClick={() => setEntryOpen(value => !value)}
+          >
+            {entryOpen ? 'Close data entry' : 'Report maintenance defect'}
+          </button>
+        )}
       </div>
+
+      {canReportDefect && entryOpen && (
+        <section className="priority-entry-panel" aria-label="Maintenance data entry">
+          <div className="priority-entry-heading">
+            <div>
+              <span className="eyebrow">{session.user.department} DATA ENTRY</span>
+              <h2>Add maintenance data</h2>
+              <p>Submit a single defect or upload the department Excel template.</p>
+            </div>
+            <button type="button" className="priority-entry-close" onClick={() => setEntryOpen(false)}>Close</button>
+          </div>
+          <div className="priority-entry-grid">
+            <div className="priority-entry-form">
+              <h3>Single defect</h3>
+              <AddDefectForm onComplete={refreshTasks} />
+            </div>
+            <div className="priority-entry-form">
+              <h3>Excel bulk upload</h3>
+              <BulkUploadModal onComplete={refreshTasks} />
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className="priority-kpis">
         <div className="priority-kpi critical">
