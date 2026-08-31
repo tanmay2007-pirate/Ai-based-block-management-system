@@ -74,9 +74,12 @@ function StatusBadge({ status }) {
 
 export default function PriorityTable() {
   const { session } = useAuth();
+  const [page, setPage] = useState(1);
+  const pageSize = 50;
+
   const { data, loading, error } = useFetch(
-    '/tasks?status=pending&limit=100',
-    { tasks: [] }
+    `/tasks?status=pending&page=${page}&limit=${pageSize}`,
+    { tasks: [], total: 0 }
   );
 
   const [department, setDepartment] = useState('');
@@ -108,6 +111,9 @@ export default function PriorityTable() {
   };
 
   const allTasks = data?.tasks || [];
+  const totalTasksInDb = data?.total ?? allTasks.length;
+  const totalPages = Math.ceil(totalTasksInDb / pageSize) || 1;
+
   const unscoredCount = allTasks.filter(
     task => !task.ai_score_data && Number(task.priority_score) === 0
   ).length;
@@ -156,9 +162,9 @@ export default function PriorityTable() {
       critical,
       medium,
       low,
-      total: allTasks.length
+      total: totalTasksInDb
     };
-  }, [allTasks]);
+  }, [allTasks, totalTasksInDb]);
 
   const departments = [
     ...new Set(
@@ -483,6 +489,63 @@ export default function PriorityTable() {
             </div>
           )}
         </div>
+
+        {totalTasksInDb > pageSize && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 20px',
+            borderTop: '1px solid #e2e8f0',
+            background: '#fafbfc',
+            borderRadius: '0 0 12px 12px',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 550 }}>
+              Showing {Math.min((page - 1) * pageSize + 1, totalTasksInDb)}–{Math.min(page * pageSize, totalTasksInDb)} of {totalTasksInDb} tasks (Page {page} of {totalPages})
+            </span>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: page <= 1 ? '#f1f5f9' : '#fff',
+                  color: page <= 1 ? '#94a3b8' : '#1e293b',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: page <= 1 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                ← Previous
+              </button>
+              <span style={{ fontSize: '12px', fontWeight: 650, color: '#0f172a', padding: '0 6px' }}>
+                {page} / {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: page >= totalPages ? '#f1f5f9' : '#fff',
+                  color: page >= totalPages ? '#94a3b8' : '#1e293b',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: page >= totalPages ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Next →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
