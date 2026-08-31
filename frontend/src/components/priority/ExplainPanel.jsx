@@ -4,13 +4,13 @@ import api from '../../services/api';
 
 function scoreValue(data) {
   return Number(
-    data?.task?.priority_score ??
     data?.priority_score ??
     data?.priorityScore ??
+    data?.score ??
     data?.explanation?.score?.result?.priority_score ??
     data?.explanation?.score?.priority_score ??
     data?.explanation?.result?.priority_score ??
-    data?.score ??
+    data?.task?.priority_score ??
     0
   );
 }
