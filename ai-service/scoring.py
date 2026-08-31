@@ -27,23 +27,43 @@ NUMERIC_FEATURES = ["asset_age_years", "total_past_defects", "traffic_level", "d
 CRITICALITY_SCORE = {"low": 25.0, "medium": 50.0, "high": 75.0, "critical": 100.0}
 SEVERITY_SCORE = CRITICALITY_SCORE
 
+_ARTIFACTS: dict | None = None
 
-def _load_artifact(name: str) -> Any:
+
+def _get_artifacts() -> dict | None:
+    global _ARTIFACTS
+    if _ARTIFACTS is None:
+        _ARTIFACTS = load_artifacts()
+    return _ARTIFACTS
+
+
+def _load_artifact(name: str) -> Any | None:
     path = MODEL_DIR / name
     if not path.exists():
-        raise FileNotFoundError(f"Model artifact is missing: {path}. Run train_model.py first.")
-    return joblib.load(path)
+        return None
+    try:
+        return joblib.load(path)
+    except Exception:
+        return None
 
 
-def load_artifacts() -> dict[str, Any]:
+def load_artifacts() -> dict[str, Any] | None:
     metadata_path = MODEL_DIR / "metadata.json"
     if not metadata_path.exists():
-        raise FileNotFoundError(f"Training metadata is missing: {metadata_path}. Run train_model.py first.")
-    return {
-        "classifier": _load_artifact("risk_classifier.joblib"),
-        "duration_regressor": _load_artifact("duration_regressor.joblib"),
-        "metadata": json.loads(metadata_path.read_text(encoding="utf-8")),
-    }
+        return None
+    try:
+        classifier = _load_artifact("risk_classifier.joblib")
+        duration_regressor = _load_artifact("duration_regressor.joblib")
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        if classifier is None or duration_regressor is None:
+            return None
+        return {
+            "classifier": classifier,
+            "duration_regressor": duration_regressor,
+            "metadata": metadata,
+        }
+    except Exception:
+        return None
 
 
 def _frame(features: dict[str, Any]) -> pd.DataFrame:
@@ -78,9 +98,21 @@ def _confidence(features: dict[str, Any], metadata: dict[str, Any]) -> tuple[str
 
 
 def compute_priority(features: dict[str, Any], artifacts: dict[str, Any] | None = None) -> dict[str, Any]:
-    artifacts = artifacts or load_artifacts()
-    confidence, reason = _confidence(features, artifacts["metadata"])
+    artifacts = artifacts or _get_artifacts()
     baseline_score, baseline_components = _baseline(features)
+
+    if artifacts is None:
+        return {
+            "priority_score": baseline_score,
+            "risk_probability": None,
+            "predicted_repair_duration_hours": None,
+            "confidence": "LOW_CONFIDENCE",
+            "confidence_reason": "Model artifacts not available; using transparent baseline scoring.",
+            "scoring_method": "transparent_baseline",
+            "baseline_components": baseline_components,
+        }
+
+    confidence, reason = _confidence(features, artifacts["metadata"])
     row = _frame(features)
 
     if confidence == "LOW_CONFIDENCE":
@@ -110,11 +142,70 @@ def compute_priority(features: dict[str, Any], artifacts: dict[str, Any] | None 
     }
 
 
+def compute_priority_batch(features_list: list[dict[str, Any]], artifacts: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    artifacts = artifacts or _get_artifacts()
+    if not features_list:
+        return []
+
+    if artifacts is None:
+        return [compute_priority(f, artifacts=None) for f in features_list]
+
+    # Pre-check confidence and build batch dataframe
+    rows = []
+    confidences = []
+    for f in features_list:
+        conf, reason = _confidence(f, artifacts["metadata"])
+        confidences.append((conf, reason))
+        rows.append({k: f.get(k, 0 if k in NUMERIC_FEATURES else "medium") for k in FEATURES})
+
+    df = pd.DataFrame(rows, columns=FEATURES)
+
+    try:
+        risk_probs = artifacts["classifier"].predict_proba(df)[:, 1]
+        predicted_durations = artifacts["duration_regressor"].predict(df)
+    except Exception:
+        # Fallback to individual scoring if vectorized prediction fails
+        return [compute_priority(f, artifacts=artifacts) for f in features_list]
+
+    results = []
+    for i, f in enumerate(features_list):
+        conf, reason = confidences[i]
+        baseline_score, baseline_components = _baseline(f)
+
+        if conf == "LOW_CONFIDENCE":
+            results.append({
+                "priority_score": baseline_score,
+                "risk_probability": None,
+                "predicted_repair_duration_hours": None,
+                "confidence": conf,
+                "confidence_reason": reason,
+                "scoring_method": "transparent_baseline",
+                "baseline_components": baseline_components,
+            })
+        else:
+            risk_prob = float(risk_probs[i])
+            dur = max(0.25, float(predicted_durations[i]))
+            risk_score = risk_prob * 100.0
+            overdue_score = min(float(f.get("days_overdue", 0)) / 30.0 * 100.0, 100.0)
+            crit_score = CRITICALITY_SCORE.get(str(f.get("criticality", "medium")).lower(), 50.0)
+            p = risk_score * 0.50 + overdue_score * 0.25 + crit_score * 0.25
+            results.append({
+                "priority_score": round(min(p, 100.0), 2),
+                "risk_probability": round(risk_prob, 4),
+                "predicted_repair_duration_hours": round(dur, 3),
+                "confidence": conf,
+                "confidence_reason": reason,
+                "scoring_method": "trained_model",
+            })
+
+    return results
+
+
 def explain_priority(features: dict[str, Any], artifacts: dict[str, Any] | None = None) -> dict[str, Any]:
     """Return real tree-model contributions, with transparent fallback for cold starts."""
-    artifacts = artifacts or load_artifacts()
+    artifacts = artifacts or _get_artifacts()
     result = compute_priority(features, artifacts)
-    if result["confidence"] == "LOW_CONFIDENCE":
+    if result["confidence"] == "LOW_CONFIDENCE" or artifacts is None:
         return {"result": result, "method": "transparent_fallback", "shap_values": None}
     try:
         pipeline = artifacts["classifier"]

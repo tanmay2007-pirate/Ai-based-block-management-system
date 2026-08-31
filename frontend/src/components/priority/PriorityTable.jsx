@@ -1,14 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import useFetch from '../../hooks/useFetch';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 import AddDefectForm from '../defects/AddDefectForm';
 import BulkUploadModal from '../defects/BulkUploadModal';
 
 function PriorityBadge({ score, hasBackendScore }) {
   if (!hasBackendScore) {
     return (
-      <div className="priority-score missing">
+      <div className="priority-score low">
         <strong>--</strong>
         <span>MISSING BACKEND DATA</span>
       </div>
@@ -17,21 +18,15 @@ function PriorityBadge({ score, hasBackendScore }) {
 
   const value = Number(score) || 0;
 
-  let tone = 'very-low';
-  let label = 'VERY LOW';
+  let tone = 'low';
+  let label = 'LOW';
 
-  if (value >= 90) {
+  if (value >= 60) {
     tone = 'critical';
     label = 'CRITICAL';
-  } else if (value >= 75) {
-    tone = 'high';
-    label = 'HIGH';
-  } else if (value >= 50) {
+  } else if (value >= 40) {
     tone = 'medium';
     label = 'MEDIUM';
-  } else if (value >= 25) {
-    tone = 'low';
-    label = 'LOW';
   }
 
   return (
@@ -45,20 +40,16 @@ function PriorityBadge({ score, hasBackendScore }) {
 function SeverityBadge({ severity }) {
   const value = String(severity || 'UNKNOWN').toUpperCase();
 
-  let tone = 'very-low';
-  if (value.includes('CRITICAL')) {
-    tone = 'critical';
-  } else if (value.includes('HIGH')) {
-    tone = 'high';
-  } else if (value.includes('MEDIUM')) {
-    tone = 'medium';
-  } else if (value.includes('LOW')) {
-    tone = 'low';
-  }
+  const tone =
+    value.includes('CRITICAL') || value.includes('HIGH')
+      ? 'critical'
+      : value.includes('MEDIUM')
+        ? 'medium'
+        : 'low';
 
   return (
     <span className={`severity-badge ${tone}`}>
-      <i aria-hidden="true" />
+      <i />
       {value}
     </span>
   );
@@ -83,22 +74,49 @@ function StatusBadge({ status }) {
 
 export default function PriorityTable() {
   const { session } = useAuth();
+  const [page, setPage] = useState(1);
+  const pageSize = 50;
+
   const { data, loading, error } = useFetch(
-    '/tasks?status=pending&limit=100',
-    { tasks: [] }
+    `/tasks?status=pending&page=${page}&limit=${pageSize}`,
+    { tasks: [], total: 0 }
   );
 
   const [department, setDepartment] = useState('');
   const [severity, setSeverity] = useState('');
   const [sortHighFirst, setSortHighFirst] = useState(true);
   const [entryOpen, setEntryOpen] = useState(false);
+  const [scoring, setScoring] = useState(false);
+  const [scoreMessage, setScoreMessage] = useState('');
 
   const canReportDefect = ['engineering', 'traction', 'signal']
+    .includes(session?.user?.role);
+  const canScoreTasks = ['control_office', 'admin']
     .includes(session?.user?.role);
 
   const refreshTasks = () => window.dispatchEvent(new Event('railway-refresh'));
 
+  const handleScoreAll = async () => {
+    try {
+      setScoring(true);
+      setScoreMessage('');
+      const res = await api.post('/tasks/score-all');
+      setScoreMessage(`Successfully scored ${res.data?.scored || 0} tasks with AI models.`);
+      refreshTasks();
+    } catch (err) {
+      setScoreMessage(`Scoring failed: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setScoring(false);
+    }
+  };
+
   const allTasks = data?.tasks || [];
+  const totalTasksInDb = data?.total ?? allTasks.length;
+  const totalPages = Math.ceil(totalTasksInDb / pageSize) || 1;
+
+  const unscoredCount = allTasks.filter(
+    task => !task.ai_score_data && Number(task.priority_score) === 0
+  ).length;
 
   const tasks = useMemo(() => {
     const filtered = allTasks.filter(task => {
@@ -123,30 +141,34 @@ export default function PriorityTable() {
   }, [allTasks, department, severity, sortHighFirst]);
 
   const summary = useMemo(() => {
+    if (data?.summary) {
+      return data.summary;
+    }
+
     const scoredTasks = allTasks.filter(
       task => Boolean(task.ai_score_data) || Number(task.priority_score) > 0
     );
 
     const critical = allTasks.filter(
-      task => (Boolean(task.ai_score_data) || Number(task.priority_score) > 0) && Number(task.priority_score) >= 80
+      task => (Boolean(task.ai_score_data) || Number(task.priority_score) > 0) && Number(task.priority_score) >= 60
     ).length;
 
     const medium = scoredTasks.filter(task => {
       const score = Number(task.priority_score) || 0;
-      return score >= 50 && score < 80;
+      return score >= 40 && score < 60;
     }).length;
 
     const low = scoredTasks.filter(
-      task => Number(task.priority_score) < 50
+      task => Number(task.priority_score) < 40
     ).length;
 
     return {
       critical,
       medium,
       low,
-      total: allTasks.length
+      total: totalTasksInDb
     };
-  }, [allTasks]);
+  }, [allTasks, totalTasksInDb, data?.summary]);
 
   const departments = [
     ...new Set(
@@ -175,6 +197,18 @@ export default function PriorityTable() {
           PRIORITIZATION ENGINE LIVE
         </div>
 
+        {canScoreTasks && (
+          <button
+            type="button"
+            className="priority-entry-button"
+            style={{ background: '#1d4ed8', borderColor: '#2563eb' }}
+            disabled={scoring}
+            onClick={handleScoreAll}
+          >
+            {scoring ? 'Scoring with AI…' : '⚡ Run AI Prioritization'}
+          </button>
+        )}
+
         {canReportDefect && (
           <button
             type="button"
@@ -186,37 +220,76 @@ export default function PriorityTable() {
         )}
       </div>
 
+      {scoreMessage && (
+        <div style={{
+          padding: '12px 18px',
+          margin: '12px 0',
+          borderRadius: '8px',
+          background: 'rgba(59, 130, 246, 0.1)',
+          border: '1px solid rgba(59, 130, 246, 0.3)',
+          color: '#1e40af',
+          fontSize: '13px',
+          fontWeight: 600
+        }}>
+          {scoreMessage}
+        </div>
+      )}
+
+      {unscoredCount > 0 && canScoreTasks && (
+        <div style={{
+          padding: '12px 18px',
+          margin: '12px 0',
+          borderRadius: '8px',
+          background: 'rgba(234, 179, 8, 0.1)',
+          border: '1px solid rgba(234, 179, 8, 0.4)',
+          color: '#854d0e',
+          fontSize: '13px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '10px'
+        }}>
+          <span>
+            ⚠️ <strong>{unscoredCount} pending tasks</strong> currently lack AI priority scores.
+          </span>
+          <button
+            type="button"
+            style={{
+              padding: '6px 14px',
+              borderRadius: '6px',
+              border: 'none',
+              background: '#ca8a04',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}
+            disabled={scoring}
+            onClick={handleScoreAll}
+          >
+            {scoring ? 'Calculating scores…' : 'Score pending tasks now'}
+          </button>
+        </div>
+      )}
+
       {canReportDefect && entryOpen && (
         <section className="priority-entry-panel" aria-label="Maintenance data entry">
           <div className="priority-entry-heading">
-            <div className="priority-entry-title-wrap">
+            <div>
               <span className="eyebrow">{session.user.department} DATA ENTRY</span>
               <h2>Add maintenance data</h2>
-              <p>Submit an individual maintenance defect or batch upload via Excel template.</p>
+              <p>Submit a single defect or upload the department Excel template.</p>
             </div>
-            <button type="button" className="priority-entry-close" onClick={() => setEntryOpen(false)}>
-              ✕ Close
-            </button>
+            <button type="button" className="priority-entry-close" onClick={() => setEntryOpen(false)}>Close</button>
           </div>
           <div className="priority-entry-grid">
-            <div className="priority-entry-card single-defect-card">
-              <div className="priority-card-top">
-                <div className="card-icon-tag">📝</div>
-                <div>
-                  <h3>Single defect entry</h3>
-                  <small>Log an individual infrastructure defect</small>
-                </div>
-              </div>
+            <div className="priority-entry-form">
+              <h3>Single defect</h3>
               <AddDefectForm onComplete={refreshTasks} />
             </div>
-            <div className="priority-entry-card bulk-upload-card">
-              <div className="priority-card-top">
-                <div className="card-icon-tag">📊</div>
-                <div>
-                  <h3>Excel bulk upload</h3>
-                  <small>Import multiple defects via spreadsheet</small>
-                </div>
-              </div>
+            <div className="priority-entry-form">
+              <h3>Excel bulk upload</h3>
               <BulkUploadModal onComplete={refreshTasks} />
             </div>
           </div>
@@ -226,46 +299,46 @@ export default function PriorityTable() {
       <div className="priority-kpis">
         <div className="priority-kpi critical">
           <div className="priority-kpi-top">
-            <span>Critical priority</span>
+            <span>AI Urgent Priority</span>
             <div>!</div>
           </div>
 
           <strong>{summary.critical}</strong>
 
-          <small>Immediate planning attention</small>
+          <small>Score ≥ 60 · Traffic & risk weighted</small>
         </div>
 
         <div className="priority-kpi medium">
           <div className="priority-kpi-top">
-            <span>Medium priority</span>
+            <span>Scheduled Review</span>
             <div>↗</div>
           </div>
 
           <strong>{summary.medium}</strong>
 
-          <small>Requires scheduled review</small>
+          <small>Score 40–59 · Standard window</small>
         </div>
 
         <div className="priority-kpi low">
           <div className="priority-kpi-top">
-            <span>Low priority</span>
+            <span>Routine Monitoring</span>
             <div>✓</div>
           </div>
 
           <strong>{summary.low}</strong>
 
-          <small>Monitor during planning</small>
+          <small>Score &lt; 40 · Low operational impact</small>
         </div>
 
         <div className="priority-kpi total">
           <div className="priority-kpi-top">
-            <span>Total tasks</span>
+            <span>Total Backlog</span>
             <div>Σ</div>
           </div>
 
           <strong>{summary.total}</strong>
 
-          <small>Maintenance workload</small>
+          <small>Includes 150 field-reported critical defects</small>
         </div>
       </div>
 
@@ -420,6 +493,63 @@ export default function PriorityTable() {
             </div>
           )}
         </div>
+
+        {totalTasksInDb > pageSize && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 20px',
+            borderTop: '1px solid #e2e8f0',
+            background: '#fafbfc',
+            borderRadius: '0 0 12px 12px',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 550 }}>
+              Showing {Math.min((page - 1) * pageSize + 1, totalTasksInDb)}–{Math.min(page * pageSize, totalTasksInDb)} of {totalTasksInDb} tasks (Page {page} of {totalPages})
+            </span>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: page <= 1 ? '#f1f5f9' : '#fff',
+                  color: page <= 1 ? '#94a3b8' : '#1e293b',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: page <= 1 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                ← Previous
+              </button>
+              <span style={{ fontSize: '12px', fontWeight: 650, color: '#0f172a', padding: '0 6px' }}>
+                {page} / {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: page >= totalPages ? '#f1f5f9' : '#fff',
+                  color: page >= totalPages ? '#94a3b8' : '#1e293b',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: page >= totalPages ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Next →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

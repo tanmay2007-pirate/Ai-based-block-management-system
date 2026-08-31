@@ -1,7 +1,8 @@
-﻿// src/routes/reports.js — Analytics & reporting endpoints (skeleton)
+// src/routes/reports.js — Analytics & reporting endpoints (skeleton)
 const express = require('express');
 const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
+const { validate, queryPaginationSchema } = require('../middleware/validate');
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ router.get('/summary', auth, async (req, res, next) => {
     const [totalTasks, pendingTasks, approvedPlans, criticalTasks, plans, tasks] = await Promise.all([
       prisma.maintenanceTask.count({ where: { is_deleted: false } }),
       prisma.maintenanceTask.count({ where: { status: 'pending', is_deleted: false } }),
-      prisma.approvedBlockPlan.count(),
+      prisma.blockPlan.count({ where: { status: 'approved' } }),
       prisma.maintenanceTask.count({ where: { severity: 'critical', is_deleted: false } }),
       prisma.blockPlan.findMany({ select: { section: true, planned_start: true, planned_end: true, conflict_flags: true, trains: { include: { task: { select: { department: true } } } } } }),
       prisma.maintenanceTask.findMany({ where: { is_deleted: false }, select: { department: true, status: true, created_at: true } }),
@@ -30,7 +31,7 @@ router.get('/summary', auth, async (req, res, next) => {
       const duration = Math.max(0, (plan.planned_end - plan.planned_start) / 3600000);
       for (const item of plan.trains) {
         const department = item.task?.department;
-        if (department) utilizationByDepartment[department] = (utilizationByDepartment[department] || 0) + duration;
+        if (department) {utilizationByDepartment[department] = (utilizationByDepartment[department] || 0) + duration;}
       }
     }
     Object.keys(utilizationByDepartment).forEach(key => { utilizationByDepartment[key] = Number(Math.min(100, utilizationByDepartment[key] / 168 * 100).toFixed(2)); });
@@ -50,13 +51,13 @@ router.get('/summary', auth, async (req, res, next) => {
 });
 
 // GET /api/reports/audit — audit log (admin only)
-router.get('/audit', auth, async (req, res, next) => {
+router.get('/audit', auth, validate(queryPaginationSchema), async (req, res, next) => {
   try {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
-    const { table_name, action, limit = 50 } = req.query;
+    if (req.user.role !== 'admin') {return res.status(403).json({ error: 'Forbidden' });}
+    const { table_name, action, limit = 50 } = req.validated.query;
     const where = {};
-    if (table_name) where.table_name = table_name;
-    if (action) where.action = action;
+    if (table_name) {where.table_name = table_name;}
+    if (action) {where.action = action;}
     const logs = await prisma.auditLog.findMany({ where, orderBy: { created_at: 'desc' }, take: parseInt(limit) });
     res.json({ logs });
   } catch (err) { next(err); }

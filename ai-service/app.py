@@ -1,5 +1,6 @@
 """FastAPI API for scoring, explainability, and schedule generation."""
 
+import os
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -7,11 +8,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from scheduler import generate_schedule
-from scoring import compute_priority, explain_priority
+from scoring import compute_priority, compute_priority_batch, explain_priority
 
 
 app = FastAPI(title="Railway AI Service", version="1.0.0")
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5000", "http://localhost:5173"],
+_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5000,http://localhost:5173,http://127.0.0.1:5000,http://127.0.0.1:5173").split(",")
+app.add_middleware(CORSMiddleware, allow_origins=_origins,
                    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 
@@ -74,7 +76,8 @@ def score_defect(defect: Defect) -> dict[str, Any]:
 
 @app.post("/score-batch")
 def score_batch(defects: list[Defect]) -> list[dict[str, Any]]:
-    return [compute_priority(_features(defect)) for defect in defects]
+    features_list = [_features(defect) for defect in defects]
+    return compute_priority_batch(features_list)
 
 
 @app.post("/explain-score")

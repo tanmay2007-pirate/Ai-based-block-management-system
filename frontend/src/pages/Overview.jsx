@@ -20,7 +20,7 @@ function AnimatedNumber({ value, duration = 900 }) {
     let animationFrame;
 
     const animate = timestamp => {
-      if (!startTime) startTime = timestamp;
+      if (!startTime) {startTime = timestamp;}
 
       const progress = Math.min(
         (timestamp - startTime) / duration,
@@ -98,9 +98,18 @@ export default function Overview() {
     <>
       {/* HEADER */}
       <section className="overview-hero">
+
         <div className="overview-hero-copy">
           <span className="eyebrow">RAILWAY OPERATIONS CONTROL</span>
-          <h1 className="overview-hero-title">Network operations overview</h1>
+
+          <div className="hero-title-stage">
+
+            <h1 className="overview-typed-title">
+              <span className="typed-title-text">Network operations overview</span>
+              <span className="typed-title-cursor" aria-hidden="true"></span>
+            </h1>
+          </div>
+
           <p>
             Monitor maintenance activity, railway blocks and operational risk
             from one intelligent planning workspace.
@@ -109,9 +118,7 @@ export default function Overview() {
 
         <div className="overview-hero-actions">
           <div className="overview-live">
-            <div className="live-halo">
-              <i />
-            </div>
+            <i />
             <div>
               <strong>Systems operational</strong>
               <span>{health?.timestamp ? `Backend checked ${new Date(health.timestamp).toLocaleTimeString()}` : apiStatus}</span>
@@ -147,7 +154,7 @@ export default function Overview() {
           value={data.criticalTasks ?? '—'}
           tone="red"
           icon="!"
-          description="Require immediate attention"
+          description="Field-reported physical defects"
         />
 
         <Stat
@@ -184,40 +191,32 @@ export default function Overview() {
           <div className="ai-process">
             <div className="ai-process-step">
               <span>01</span>
-              <div>
-                <strong>Maintenance</strong>
-                <small>Tasks identified</small>
-              </div>
+              <strong>Maintenance</strong>
+              <small>Tasks identified</small>
             </div>
 
             <div className="ai-process-line" />
 
             <div className="ai-process-step">
               <span>02</span>
-              <div>
-                <strong>AI analysis</strong>
-                <small>Priority calculated</small>
-              </div>
+              <strong>AI analysis</strong>
+              <small>Priority calculated</small>
             </div>
 
             <div className="ai-process-line" />
 
             <div className="ai-process-step">
               <span>03</span>
-              <div>
-                <strong>Conflict check</strong>
-                <small>Movements evaluated</small>
-              </div>
+              <strong>Conflict check</strong>
+              <small>Movements evaluated</small>
             </div>
 
             <div className="ai-process-line" />
 
             <div className="ai-process-step">
               <span>04</span>
-              <div>
-                <strong>Block plan</strong>
-                <small>Window generated</small>
-              </div>
+              <strong>Block plan</strong>
+              <small>Window generated</small>
             </div>
           </div>
 
@@ -279,7 +278,7 @@ export default function Overview() {
         <div className="overview-section-heading">
           <div>
             <span className="eyebrow">OPERATIONS SNAPSHOT</span>
-            <h2>Today's planning activity</h2>
+            <h2>Today&apos;s planning activity</h2>
           </div>
 
           <NavLink to="/calendar">View all blocks →</NavLink>
@@ -287,32 +286,32 @@ export default function Overview() {
 
         <div className="operations-snapshot">
           <div className="operation-metric">
-            <div className="operation-icon green">✓</div>
-            <div className="operation-info">
+            <span className="operation-icon">▣</span>
+            <div>
               <strong>{data.approvedPlans ?? '—'}</strong>
               <span>Approved blocks</span>
             </div>
           </div>
 
           <div className="operation-metric">
-            <div className="operation-icon orange">◷</div>
-            <div className="operation-info">
+            <span className="operation-icon orange">◷</span>
+            <div>
               <strong>{data.pendingTasks ?? '—'}</strong>
               <span>Pending tasks</span>
             </div>
           </div>
 
           <div className="operation-metric">
-            <div className="operation-icon red">!</div>
-            <div className="operation-info">
+            <span className="operation-icon red">!</span>
+            <div>
               <strong>{data.criticalTasks ?? '—'}</strong>
               <span>Critical issues</span>
             </div>
           </div>
 
           <div className="operation-metric">
-            <div className="operation-icon blue">↗</div>
-            <div className="operation-info">
+            <span className="operation-icon blue">↗</span>
+            <div>
               <strong>{networkAvailability === undefined ? '—' : `${Number(networkAvailability).toFixed(1)}%`}</strong>
               <span>Network availability</span>
             </div>

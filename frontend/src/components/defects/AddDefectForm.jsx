@@ -25,7 +25,7 @@ export default function AddDefectForm({ onComplete }) {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  if (!config) return null;
+  if (!config) {return null;}
 
   const submit = async (event) => {
     event.preventDefault();
@@ -33,7 +33,7 @@ export default function AddDefectForm({ onComplete }) {
     setSaving(true);
     try {
       const payload = { ...values };
-      if (payload.location_km !== undefined && payload.location_km !== '') payload.location_km = Number(payload.location_km);
+      if (payload.location_km !== undefined && payload.location_km !== '') {payload.location_km = Number(payload.location_km);}
       await api.post(`/` + department.toLowerCase() + '/defects', payload);
       setValues({});
       onComplete?.();

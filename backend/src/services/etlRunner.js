@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const prisma = require('../lib/prisma');
 const { normalizeTmsDefect, normalizeTdmsDefect, normalizeSmmsDefect } = require('./etl');
+const { scoreBatch } = require('./aiScore');
 
 const DATA_DIR = path.join(__dirname, '../../data');
 
@@ -523,6 +524,13 @@ async function runEtlLoader() {
         throw new Error(`[ETL] ${invalidReferences.length} records reference an unknown asset_id`);
       }
 
+      const existingTaskCount = await prisma.maintenanceTask.count();
+      const existingAssetCount = await prisma.asset.count();
+      if (existingTaskCount > 500 && existingAssetCount > 50) {
+        console.log(`[ETL] Database already populated (${existingTaskCount} tasks, ${existingAssetCount} assets). Skipping initial load.`);
+        return { message: 'Database already populated' };
+      }
+
       console.log('[ETL] Clearing existing data from tables...');
       await prisma.maintenanceHistory.deleteMany({});
       await prisma.maintenanceTask.deleteMany({});
@@ -734,6 +742,53 @@ async function runEtlLoader() {
 
       const succeeded = tasksToCreate.length;
       console.log(`[ETL] Normalization completed: ${succeeded} tasks inserted into planning.maintenance_tasks.`);
+
+      console.log('[ETL] Scoring normalized maintenance tasks with AI service...');
+      try {
+        const pendingTasks = await prisma.maintenanceTask.findMany({
+          where: { is_deleted: false, status: 'pending' },
+        });
+        const taskAssets = await prisma.asset.findMany({
+          where: { id: { in: pendingTasks.map((t) => t.asset_id).filter(Boolean) } },
+        });
+        const assetMap = new Map(taskAssets.map((a) => [a.id, a]));
+        const taskFeaturesList = pendingTasks.map((t) => {
+          const a = assetMap.get(t.asset_id);
+          const age = a && a.installation_date
+            ? Math.max(0, (Date.now() - new Date(a.installation_date).getTime()) / (365.25 * 86400000))
+            : 0;
+          return {
+            severity: t.severity,
+            days_overdue: 0,
+            asset_criticality: a?.criticality || 'medium',
+            criticality: a?.criticality || 'medium',
+            corridor_traffic: a?.traffic_level || 0,
+            department: t.department,
+            asset_type: a?.asset_type || (t.department === 'TMS' ? 'track' : 'signal'),
+            asset_age_years: age,
+            total_past_defects: a?.total_past_defects || 0,
+          };
+        });
+
+        const scores = await scoreBatch(taskFeaturesList);
+        const CHUNK_SIZE = 100;
+        for (let i = 0; i < pendingTasks.length; i += CHUNK_SIZE) {
+          const chunk = pendingTasks.slice(i, i + CHUNK_SIZE);
+          await prisma.$transaction(chunk.map((task, offset) => {
+            const index = i + offset;
+            return prisma.maintenanceTask.update({
+              where: { id: task.id },
+              data: {
+                priority_score: Number(scores[index]?.priority_score || 0),
+                ai_score_data: scores[index] || null,
+              },
+            });
+          }));
+        }
+        console.log(`[ETL] Successfully scored ${pendingTasks.length} tasks with AI models.`);
+      } catch (scoreErr) {
+        console.warn('[ETL] AI scoring during ETL encountered an error (will continue):', scoreErr.message);
+      }
 
       console.log('[ETL] Generating synthetic block-plan coverage for the calendar...');
       const blockSummary = await generateSyntheticBlockPlans({ days, seed });

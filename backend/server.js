@@ -4,6 +4,12 @@
 // ============================================================
 require('dotenv').config();
 
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('[STARTUP] FATAL: JWT_SECRET environment variable is required');
+  process.exit(1);
+}
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -23,6 +29,7 @@ const corridorRoutes  = require('./src/routes/corridors');
 
 // Middleware
 const errorHandler = require('./src/middleware/errorHandler');
+const { apiLimiter } = require('./src/middleware/rateLimiter');
 
 const prisma = require('./src/lib/prisma');
 
@@ -34,6 +41,7 @@ const server = http.createServer(app);
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const PORT = process.env.PORT || 5000;
+const CRON_TIMEZONE = process.env.CRON_TIMEZONE || 'Asia/Kolkata';
 
 // ============================================================
 // CORS — MUST be before all routes
@@ -102,6 +110,7 @@ app.get('/api/health', async (req, res) => {
 // ============================================================
 // API Routes
 // ============================================================
+app.use('/api', apiLimiter);
 app.use('/api/auth',      authRoutes);
 app.use('/api',           defectRoutes);   // /api/tms/defects, /api/tdms/defects, /api/smms/defects
 app.use('/api/blocks',    blockRoutes);
@@ -110,8 +119,6 @@ app.use('/api/schedule',  scheduleRoutes);
 app.use('/api/reports',   reportRoutes);
 app.use('/api/etl',       etlRoutes);
 app.use('/api/emergency', emergencyRoutes);
-// Exact Phase 4B endpoint alias for emergency-triggered re-planning.
-app.use('/api', emergencyRoutes);
 app.use('/api/corridors', corridorRoutes);
 
 // 404 catch-all for unknown routes
@@ -152,7 +159,7 @@ cron.schedule('0 2 * * *', async () => {
   } catch (err) {
     console.error('[CRON] ETL error:', err.message);
   }
-}, { timezone: 'Asia/Kolkata' });
+}, { timezone: CRON_TIMEZONE });
 
 // ============================================================
 // Start server

@@ -3,34 +3,29 @@ const express = require('express');
 const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
 const { scoreDefect, generateSchedule } = require('../services/aiScore');
+const { validate, emergencyNotificationSchema, emergencyDefectSchema, idParamSchema } = require('../middleware/validate');
 
 const router = express.Router();
 
 // POST /api/emergency — raise an emergency notification
-router.post('/', auth, async (req, res, next) => {
+router.post('/', auth, validate(emergencyNotificationSchema), async (req, res, next) => {
   try {
-    const { title, message, related_id } = req.body;
-    if (!title || !message) {
-      return res.status(400).json({ error: 'Bad Request', message: 'title and message required' });
-    }
+    const { title, message, related_id } = req.validated.body;
     const notification = await prisma.notification.create({
       data: { type: 'emergency', title, message, related_id },
     });
 
     const io = req.app.get('io');
-    if (io) io.emit('emergency-alert', notification);
+    if (io) {io.emit('emergency-alert', notification);}
     res.status(201).json({ notification });
   } catch (err) { next(err); }
 });
 
-// POST /api/emergency-defect — save, score, and re-plan a critical defect
-router.post('/emergency-defect', auth, async (req, res, next) => {
+// POST /api/emergency/defect — save, score, and re-plan a critical defect
+router.post('/defect', auth, validate(emergencyDefectSchema), async (req, res, next) => {
   try {
     const { asset_id, section, severity = 'critical', description, department = req.user.department,
-      days_overdue = 0, traffic_level = 0, asset_type = 'track', criticality = 'critical' } = req.body;
-    if (!asset_id || !section || !description) {
-      return res.status(400).json({ error: 'Bad Request', message: 'asset_id, section, description required' });
-    }
+      days_overdue = 0, traffic_level = 0, asset_type = 'track', criticality = 'critical' } = req.validated.body;
     const task = await prisma.maintenanceTask.create({
       data: {
         source_system: 'emergency', source_id: `emergency-${Date.now()}`, task_type: 'emergency_defect',
@@ -52,8 +47,8 @@ router.post('/emergency-defect', auth, async (req, res, next) => {
           department, severity, priority_score: priorityScore, is_critical: true,
           estimated_duration_hours: 2, days_overdue, asset_type }],
       });
-      if (req.app.get('io')) req.app.get('io').emit('schedule-reoptimized',
-        { section, before, after: replan, task_id: task.id });
+      if (req.app.get('io')) {req.app.get('io').emit('schedule-reoptimized',
+        { section, before, after: replan, task_id: task.id });}
     }
     res.status(201).json({ task, score, replan, reoptimized: Boolean(replan) });
   } catch (err) { next(err); }
@@ -71,14 +66,14 @@ router.get('/notifications', auth, async (req, res, next) => {
 });
 
 // PATCH /api/emergency/notifications/:id/read
-router.patch('/notifications/:id/read', auth, async (req, res, next) => {
+router.patch('/notifications/:id/read', auth, validate(idParamSchema), async (req, res, next) => {
   try {
     const updated = await prisma.notification.update({
-      where: { id: req.params.id },
+      where: { id: req.validated.params.id },
       data: { is_read: true },
     });
     res.json({ notification: updated });
   } catch (err) { next(err); }
 });
 
-module.exports = router;
+module.exports = router;;

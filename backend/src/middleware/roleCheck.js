@@ -13,6 +13,10 @@ function roleCheck(allowedRoles) {
     if (!req.user) {
       return res.status(401).json({ error: 'Unauthorized', message: 'Not authenticated' });
     }
+    // Admin bypasses all role checks
+    if (req.user.role === 'admin') {
+      return next();
+    }
     if (!roles.includes(req.user.role)) {
       const msg = 'Role ' + req.user.role + ' not permitted. Required: ' + roles.join(' or ');
       return res.status(403).json({ error: 'Forbidden', message: msg });

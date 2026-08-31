@@ -32,7 +32,7 @@ export function AuthProvider({ children }) {
     const { data } = await api.post('/auth/login', { email, password });
     sessionStorage.setItem('railway_token', data.token);
     api.defaults.headers.common.Authorization = `Bearer ${data.token}`;
-    setSession(data);
+    setSession({ user: data.user, token: data.token });
   };
 
   const logout = () => {
