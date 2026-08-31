@@ -284,7 +284,7 @@ export default function WhatIfBoard() {
           </div>
         </div>
 
-        <aside className="simulation-side">
+        <div className="simulation-side">
           <div className="panel scenario-panel">
             <div className="simulation-panel-heading">
               <div>
@@ -421,7 +421,7 @@ export default function WhatIfBoard() {
               )}
             </div>
           )}
-        </aside>
+        </div>
       </div>
     </>
   );

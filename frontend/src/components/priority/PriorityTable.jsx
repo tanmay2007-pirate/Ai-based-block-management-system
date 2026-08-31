@@ -8,7 +8,7 @@ import BulkUploadModal from '../defects/BulkUploadModal';
 function PriorityBadge({ score, hasBackendScore }) {
   if (!hasBackendScore) {
     return (
-      <div className="priority-score low">
+      <div className="priority-score missing">
         <strong>--</strong>
         <span>MISSING BACKEND DATA</span>
       </div>
@@ -17,15 +17,21 @@ function PriorityBadge({ score, hasBackendScore }) {
 
   const value = Number(score) || 0;
 
-  let tone = 'low';
-  let label = 'LOW';
+  let tone = 'very-low';
+  let label = 'VERY LOW';
 
-  if (value >= 80) {
+  if (value >= 90) {
     tone = 'critical';
     label = 'CRITICAL';
+  } else if (value >= 75) {
+    tone = 'high';
+    label = 'HIGH';
   } else if (value >= 50) {
     tone = 'medium';
     label = 'MEDIUM';
+  } else if (value >= 25) {
+    tone = 'low';
+    label = 'LOW';
   }
 
   return (
@@ -39,16 +45,20 @@ function PriorityBadge({ score, hasBackendScore }) {
 function SeverityBadge({ severity }) {
   const value = String(severity || 'UNKNOWN').toUpperCase();
 
-  const tone =
-    value.includes('CRITICAL') || value.includes('HIGH')
-      ? 'critical'
-      : value.includes('MEDIUM')
-        ? 'medium'
-        : 'low';
+  let tone = 'very-low';
+  if (value.includes('CRITICAL')) {
+    tone = 'critical';
+  } else if (value.includes('HIGH')) {
+    tone = 'high';
+  } else if (value.includes('MEDIUM')) {
+    tone = 'medium';
+  } else if (value.includes('LOW')) {
+    tone = 'low';
+  }
 
   return (
     <span className={`severity-badge ${tone}`}>
-      <i />
+      <i aria-hidden="true" />
       {value}
     </span>
   );
@@ -179,20 +189,34 @@ export default function PriorityTable() {
       {canReportDefect && entryOpen && (
         <section className="priority-entry-panel" aria-label="Maintenance data entry">
           <div className="priority-entry-heading">
-            <div>
+            <div className="priority-entry-title-wrap">
               <span className="eyebrow">{session.user.department} DATA ENTRY</span>
               <h2>Add maintenance data</h2>
-              <p>Submit a single defect or upload the department Excel template.</p>
+              <p>Submit an individual maintenance defect or batch upload via Excel template.</p>
             </div>
-            <button type="button" className="priority-entry-close" onClick={() => setEntryOpen(false)}>Close</button>
+            <button type="button" className="priority-entry-close" onClick={() => setEntryOpen(false)}>
+              ✕ Close
+            </button>
           </div>
           <div className="priority-entry-grid">
-            <div className="priority-entry-form">
-              <h3>Single defect</h3>
+            <div className="priority-entry-card single-defect-card">
+              <div className="priority-card-top">
+                <div className="card-icon-tag">📝</div>
+                <div>
+                  <h3>Single defect entry</h3>
+                  <small>Log an individual infrastructure defect</small>
+                </div>
+              </div>
               <AddDefectForm onComplete={refreshTasks} />
             </div>
-            <div className="priority-entry-form">
-              <h3>Excel bulk upload</h3>
+            <div className="priority-entry-card bulk-upload-card">
+              <div className="priority-card-top">
+                <div className="card-icon-tag">📊</div>
+                <div>
+                  <h3>Excel bulk upload</h3>
+                  <small>Import multiple defects via spreadsheet</small>
+                </div>
+              </div>
               <BulkUploadModal onComplete={refreshTasks} />
             </div>
           </div>

@@ -47,11 +47,64 @@ export default function BulkUploadModal({ onComplete }) {
     }
   };
 
-  return <div className="bulk-upload">
-    <a href={`${path}/template`} onClick={downloadTemplate}>Download Template</a>
-    <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={event => setFile(event.target.files?.[0] || null)} />
-    <button className="secondary" onClick={upload} disabled={busy}>{busy ? 'Uploading…' : 'Upload .xlsx'}</button>
-    {error && <p className="error">{error}</p>}
-    {result && <div className="upload-result"><strong>Successful rows: {result.records || 0}</strong>{(result.failed_rows || []).map(row => <div key={row.row}>Row {row.row}: {row.reasons.join(', ')}</div>)}</div>}
-  </div>;
+  return (
+    <div className="bulk-upload-section">
+      <div className="bulk-template-card">
+        <div className="bulk-template-info">
+          <span className="template-icon">📄</span>
+          <div>
+            <strong>Excel Data Template</strong>
+            <small>Pre-formatted template with standard columns</small>
+          </div>
+        </div>
+        <a href={`${path}/template`} className="btn-download-template" onClick={downloadTemplate}>
+          📥 Download .xlsx
+        </a>
+      </div>
+
+      <div className="bulk-file-area">
+        <label className="file-input-wrapper">
+          <input
+            type="file"
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            onChange={event => setFile(event.target.files?.[0] || null)}
+          />
+          <div className="file-input-content">
+            <span className="file-icon">{file ? '📊' : '📁'}</span>
+            <span className="file-label-text">
+              {file ? file.name : 'Choose or drag & drop .xlsx file'}
+            </span>
+          </div>
+        </label>
+        <button
+          type="button"
+          className="btn-upload-file"
+          onClick={upload}
+          disabled={busy || !file}
+        >
+          {busy ? 'Uploading spreadsheet…' : '🚀 Upload & Import Data'}
+        </button>
+      </div>
+
+      {error && <p className="form-error-msg">{error}</p>}
+
+      {result && (
+        <div className="upload-result-box">
+          <div className="upload-success-badge">
+            ✓ Successfully imported <strong>{result.records || 0}</strong> defect records
+          </div>
+          {(result.failed_rows || []).length > 0 && (
+            <div className="upload-failed-list">
+              <span className="failed-title">Rows with errors:</span>
+              {(result.failed_rows || []).map(row => (
+                <div key={row.row} className="failed-row-item">
+                  Row {row.row}: {row.reasons.join(', ')}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
