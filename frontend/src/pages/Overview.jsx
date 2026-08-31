@@ -154,7 +154,7 @@ export default function Overview() {
           value={data.criticalTasks ?? '—'}
           tone="red"
           icon="!"
-          description="Require immediate attention"
+          description="Field-reported physical defects"
         />
 
         <Stat
