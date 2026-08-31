@@ -1,17 +1,18 @@
-﻿// src/routes/tasks.js — Maintenance task listing & status updates
+// src/routes/tasks.js — Maintenance task listing & status updates
 const express = require('express');
 const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
 const { roleCheck } = require('../middleware/roleCheck');
 const { scoreBatch, explainScore } = require('../services/aiScore');
+const { validate, taskStatusSchema, queryPaginationSchema, idParamSchema } = require('../middleware/validate');
 
 const router = express.Router();
 
 async function loadSourceRecord(task, db = prisma) {
   const source = String(task.source_system || '').toLowerCase();
-  if (source === 'tms') return db.trackMaintenance.findUnique({ where: { id: task.source_id } });
-  if (source === 'tdms') return db.tractionMaintenance.findUnique({ where: { id: task.source_id } });
-  if (source === 'smms') return db.signallingMaintenance.findUnique({ where: { id: task.source_id } });
+  if (source === 'tms') {return db.trackMaintenance.findUnique({ where: { id: task.source_id } });}
+  if (source === 'tdms') {return db.tractionMaintenance.findUnique({ where: { id: task.source_id } });}
+  if (source === 'smms') {return db.signallingMaintenance.findUnique({ where: { id: task.source_id } });}
   return null;
 }
 
@@ -39,29 +40,53 @@ function taskFeatures(task, asset, sourceRecord = null) {
 router.post('/score-all', auth, roleCheck(['control_office', 'admin']), async (req, res, next) => {
   try {
     const tasks = await prisma.maintenanceTask.findMany({ where: { status: 'pending', is_deleted: false } });
+    if (!tasks.length) {
+      return res.json({ scored: 0, tasks: [] });
+    }
+
     const assets = await prisma.asset.findMany({ where: { id: { in: tasks.map((task) => task.asset_id).filter(Boolean) } } });
     const byId = new Map(assets.map((asset) => [asset.id, asset]));
+
     const features = await Promise.all(tasks.map(async (task) => {
       const sourceRecord = await loadSourceRecord(task);
       return taskFeatures(task, byId.get(task.asset_id), sourceRecord);
     }));
+
     const results = await scoreBatch(features);
-    await prisma.$transaction(tasks.map((task, index) => prisma.maintenanceTask.update({
-      where: { id: task.id },
-      data: { priority_score: Number(results[index]?.priority_score || 0), ai_score_data: results[index] || null },
-    })));
+
+    // Chunk transactions in groups of 100 to avoid transaction timeout
+    const CHUNK_SIZE = 100;
+    for (let i = 0; i < tasks.length; i += CHUNK_SIZE) {
+      const taskChunk = tasks.slice(i, i + CHUNK_SIZE);
+      await prisma.$transaction(taskChunk.map((task, offset) => {
+        const index = i + offset;
+        return prisma.maintenanceTask.update({
+          where: { id: task.id },
+          data: {
+            priority_score: Number(results[index]?.priority_score || 0),
+            ai_score_data: results[index] || null,
+          },
+        });
+      }));
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('tasks-scored', { count: results.length });
+    }
+
     res.json({ scored: results.length, tasks: results });
   } catch (err) { next(err); }
 });
 
 // GET /api/tasks — list tasks (filtered by department, status)
-router.get('/', auth, async (req, res, next) => {
+router.get('/', auth, validate(queryPaginationSchema), async (req, res, next) => {
   try {
-    const { department, status, severity, page = 1, limit = 20 } = req.query;
+    const { department, status, severity, page = 1, limit = 20 } = req.validated.query;
     const where = { is_deleted: false };
-    if (department) where.department = department;
-    if (status) where.status = status;
-    if (severity) where.severity = severity;
+    if (department) {where.department = department;}
+    if (status) {where.status = status;}
+    if (severity) {where.severity = severity;}
 
     // Non-admin users only see their own department
     if (req.user.role !== 'admin' && req.user.role !== 'control_office') {
@@ -70,12 +95,12 @@ router.get('/', auth, async (req, res, next) => {
 
     const [tasks, total] = await Promise.all([
       prisma.maintenanceTask.findMany({
-        where: { ...where, is_deleted: false },
+        where,
         orderBy: { priority_score: 'desc' },
         skip: (parseInt(page) - 1) * parseInt(limit),
         take: parseInt(limit),
       }),
-      prisma.maintenanceTask.count({ where: { ...where, is_deleted: false } }),
+      prisma.maintenanceTask.count({ where }),
     ]);
 
     res.json({ tasks, total, page: parseInt(page), limit: parseInt(limit) });
@@ -83,23 +108,23 @@ router.get('/', auth, async (req, res, next) => {
 });
 
 // GET /api/tasks/:id
-router.get('/:id', auth, async (req, res, next) => {
+router.get('/:id', auth, validate(idParamSchema), async (req, res, next) => {
   try {
     const task = await prisma.maintenanceTask.findUnique({
-      where: { id: req.params.id, is_deleted: false },
+      where: { id: req.validated.params.id, is_deleted: false },
       include: { history: true, block_plan_items: { include: { block_plan: true } } },
     });
 
-    if (!task) return res.status(404).json({ error: 'Not Found', message: 'Task not found' });
+    if (!task) {return res.status(404).json({ error: 'Not Found', message: 'Task not found' });}
     res.json({ task });
   } catch (err) { next(err); }
 });
 
 // GET /api/tasks/:id/explain — retrieve an explainable AI breakdown
-router.get('/:id/explain', auth, async (req, res, next) => {
+router.get('/:id/explain', auth, validate(idParamSchema), async (req, res, next) => {
   try {
-    const task = await prisma.maintenanceTask.findFirst({ where: { id: req.params.id, is_deleted: false } });
-    if (!task) return res.status(404).json({ error: 'Not Found', message: 'Task not found' });
+    const task = await prisma.maintenanceTask.findFirst({ where: { id: req.validated.params.id, is_deleted: false } });
+    if (!task) {return res.status(404).json({ error: 'Not Found', message: 'Task not found' });}
     const asset = task.asset_id ? await prisma.asset.findUnique({ where: { id: task.asset_id } }) : null;
     const sourceRecord = await loadSourceRecord(task);
     const features = taskFeatures(task, asset, sourceRecord);
@@ -109,18 +134,13 @@ router.get('/:id/explain', auth, async (req, res, next) => {
 });
 
 // PATCH /api/tasks/:id/status — update task status
-router.patch('/:id/status', auth, async (req, res, next) => {
+router.patch('/:id/status', auth, validate(taskStatusSchema), async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const { status, notes } = req.body;
-
-    const VALID_STATUSES = ['pending', 'scheduled', 'in_progress', 'completed', 'cancelled'];
-    if (!VALID_STATUSES.includes(status)) {
-      return res.status(400).json({ error: 'Bad Request', message: `status must be one of: ${VALID_STATUSES.join(', ')}` });
-    }
+    const { id } = req.validated.params;
+    const { status, notes } = req.validated.body;
 
     const existing = await prisma.maintenanceTask.findFirst({ where: { id, is_deleted: false } });
-    if (!existing) return res.status(404).json({ error: 'Not Found', message: 'Task not found' });
+    if (!existing) {return res.status(404).json({ error: 'Not Found', message: 'Task not found' });}
 
     const [task] = await prisma.$transaction([
       prisma.maintenanceTask.update({ where: { id }, data: { status } }),
@@ -130,7 +150,7 @@ router.patch('/:id/status', auth, async (req, res, next) => {
     ]);
 
     const io = req.app.get('io');
-    if (io) io.emit('task-status-updated', { task_id: id, old_status: existing.status, new_status: status });
+    if (io) {io.emit('task-status-updated', { task_id: id, old_status: existing.status, new_status: status });}
 
     res.json({ message: 'Task status updated', task });
   } catch (err) { next(err); }

@@ -7,11 +7,16 @@
         "test": "tests"
     },
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:coverage": "jest --coverage",
         "seed": "node prisma/seed.js",
         "dev": "node --watch server.js",
         "postinstall": "prisma skills sync || exit 0",
-        "start": "node server.js"
+        "start": "node server.js",
+        "lint": "eslint src/**/*.js",
+        "lint:fix": "eslint src/**/*.js --fix",
+        "typecheck": "node --check src/**/*.js"
     },
     "keywords": [],
     "author": "",
@@ -25,11 +30,18 @@
         "dotenv": "^17.4.2",
         "exceljs": "4.4.0",
         "express": "^5.2.1",
+        "express-rate-limit": "^8.7.0",
         "jsonwebtoken": "^9.0.3",
         "multer": "^2.2.0",
         "node-cron": "^4.6.0",
         "prisma": "^5.22.0",
-        "socket.io": "^4.8.3"
+        "socket.io": "^4.8.3",
+        "zod": "^4.5.4"
+    },
+    "devDependencies": {
+        "eslint": "^9.39.5",
+        "jest": "^30.5.0",
+        "supertest": "^7.2.2"
     },
     "allowScripts": {
         "prisma@5.22.0": true,

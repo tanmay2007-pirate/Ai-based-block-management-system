@@ -51,7 +51,7 @@ export default function BlockCalendar() {
       .filter(plan => {
         const status = String(plan.status || '').toUpperCase();
 
-        if (filter === 'ALL') return true;
+        if (filter === 'ALL') {return true;}
         if (filter === 'PENDING') {
           return status === 'PENDING' || status === 'PLANNED';
         }
@@ -98,9 +98,9 @@ export default function BlockCalendar() {
     const status = String(event.resource?.status || '').toUpperCase();
     let background = '#176b87';
 
-    if (status === 'APPROVED') background = '#2d8a61';
-    if (status === 'PENDING' || status === 'PLANNED') background = '#d18b2e';
-    if (status === 'REJECTED' || status === 'CONFLICT') background = '#c14e4e';
+    if (status === 'APPROVED') {background = '#2d8a61';}
+    if (status === 'PENDING' || status === 'PLANNED') {background = '#d18b2e';}
+    if (status === 'REJECTED' || status === 'CONFLICT') {background = '#c14e4e';}
 
     return {
       style: {

@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import useFetch from '../../hooks/useFetch';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 import AddDefectForm from '../defects/AddDefectForm';
 import BulkUploadModal from '../defects/BulkUploadModal';
 
@@ -82,13 +83,34 @@ export default function PriorityTable() {
   const [severity, setSeverity] = useState('');
   const [sortHighFirst, setSortHighFirst] = useState(true);
   const [entryOpen, setEntryOpen] = useState(false);
+  const [scoring, setScoring] = useState(false);
+  const [scoreMessage, setScoreMessage] = useState('');
 
   const canReportDefect = ['engineering', 'traction', 'signal']
+    .includes(session?.user?.role);
+  const canScoreTasks = ['control_office', 'admin']
     .includes(session?.user?.role);
 
   const refreshTasks = () => window.dispatchEvent(new Event('railway-refresh'));
 
+  const handleScoreAll = async () => {
+    try {
+      setScoring(true);
+      setScoreMessage('');
+      const res = await api.post('/tasks/score-all');
+      setScoreMessage(`Successfully scored ${res.data?.scored || 0} tasks with AI models.`);
+      refreshTasks();
+    } catch (err) {
+      setScoreMessage(`Scoring failed: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setScoring(false);
+    }
+  };
+
   const allTasks = data?.tasks || [];
+  const unscoredCount = allTasks.filter(
+    task => !task.ai_score_data && Number(task.priority_score) === 0
+  ).length;
 
   const tasks = useMemo(() => {
     const filtered = allTasks.filter(task => {
@@ -165,6 +187,18 @@ export default function PriorityTable() {
           PRIORITIZATION ENGINE LIVE
         </div>
 
+        {canScoreTasks && (
+          <button
+            type="button"
+            className="priority-entry-button"
+            style={{ background: '#1d4ed8', borderColor: '#2563eb' }}
+            disabled={scoring}
+            onClick={handleScoreAll}
+          >
+            {scoring ? 'Scoring with AI…' : '⚡ Run AI Prioritization'}
+          </button>
+        )}
+
         {canReportDefect && (
           <button
             type="button"
@@ -175,6 +209,59 @@ export default function PriorityTable() {
           </button>
         )}
       </div>
+
+      {scoreMessage && (
+        <div style={{
+          padding: '12px 18px',
+          margin: '12px 0',
+          borderRadius: '8px',
+          background: 'rgba(59, 130, 246, 0.1)',
+          border: '1px solid rgba(59, 130, 246, 0.3)',
+          color: '#1e40af',
+          fontSize: '13px',
+          fontWeight: 600
+        }}>
+          {scoreMessage}
+        </div>
+      )}
+
+      {unscoredCount > 0 && canScoreTasks && (
+        <div style={{
+          padding: '12px 18px',
+          margin: '12px 0',
+          borderRadius: '8px',
+          background: 'rgba(234, 179, 8, 0.1)',
+          border: '1px solid rgba(234, 179, 8, 0.4)',
+          color: '#854d0e',
+          fontSize: '13px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '10px'
+        }}>
+          <span>
+            ⚠️ <strong>{unscoredCount} pending tasks</strong> currently lack AI priority scores.
+          </span>
+          <button
+            type="button"
+            style={{
+              padding: '6px 14px',
+              borderRadius: '6px',
+              border: 'none',
+              background: '#ca8a04',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}
+            disabled={scoring}
+            onClick={handleScoreAll}
+          >
+            {scoring ? 'Calculating scores…' : 'Score pending tasks now'}
+          </button>
+        </div>
+      )}
 
       {canReportDefect && entryOpen && (
         <section className="priority-entry-panel" aria-label="Maintenance data entry">

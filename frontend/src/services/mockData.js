@@ -6,10 +6,10 @@ export const mockSummary = {
   criticalTasks: 4,
   totalTasks: 56,
   completion_by_department: {
-    'Civil Track': 91,
-    'Traction / OHE': 88,
-    'Signal & Telecom': 94,
-    'Rolling Stock': 86
+    'engineering': 91,
+    'traction': 88,
+    'signal': 94,
+    'rolling_stock': 86
   },
   availability: {
     daily: [
@@ -23,10 +23,10 @@ export const mockSummary = {
     ]
   },
   utilization_by_department: {
-    'Civil Engineering (P-Way)': 84,
-    'Traction Distribution (TRD)': 78,
-    'Signal & Telecom (S&T)': 92,
-    'Mechanical / Carriage & Wagon': 72
+    'engineering': 84,
+    'traction': 78,
+    'signal': 92,
+    'rolling_stock': 72
   }
 };
 
@@ -48,7 +48,7 @@ export const mockPlans = [
         task_id: 'TSK-1001',
         task: {
           id: 'TSK-1001',
-          department: 'Engineering',
+          department: 'engineering',
           description: 'Deep screening & ballast regulation on Up Fast Line (KM 32/12 to 34/00)',
           priority_score: 94,
           severity: 'CRITICAL',
@@ -69,7 +69,7 @@ export const mockPlans = [
         task_id: 'TSK-1002',
         task: {
           id: 'TSK-1002',
-          department: 'Traction',
+          department: 'traction',
           description: 'OHE 25kV Cantilever & Contact Wire Replacement (Substation feed cut)',
           priority_score: 88,
           severity: 'HIGH',
@@ -90,7 +90,7 @@ export const mockPlans = [
         task_id: 'TSK-1003',
         task: {
           id: 'TSK-1003',
-          department: 'Signal',
+          department: 'signal',
           description: 'Electronic Interlocking (EI) testing & Axle Counter recalibration',
           priority_score: 82,
           severity: 'HIGH',
@@ -111,7 +111,7 @@ export const mockPlans = [
         task_id: 'TSK-1004',
         task: {
           id: 'TSK-1004',
-          department: 'Engineering',
+          department: 'engineering',
           description: 'Turnout weld ultrasonic defect detection (USFD testing)',
           priority_score: 65,
           severity: 'MEDIUM',
@@ -132,7 +132,7 @@ export const mockPlans = [
         task_id: 'TSK-1005',
         task: {
           id: 'TSK-1005',
-          department: 'Traction',
+          department: 'traction',
           description: 'Pantograph clearance verification and dynamic dropper renewal',
           priority_score: 74,
           severity: 'MEDIUM',
@@ -153,7 +153,7 @@ export const mockPlans = [
         task_id: 'TSK-1006',
         task: {
           id: 'TSK-1006',
-          department: 'Signal',
+          department: 'signal',
           description: 'Automatic Signalling Block Overlap track circuit renewal',
           priority_score: 91,
           severity: 'CRITICAL',
@@ -167,7 +167,7 @@ export const mockPlans = [
 export const mockTasks = [
   {
     id: 'TSK-1001',
-    department: 'Engineering',
+    department: 'engineering',
     priority_score: 94.6,
     severity: 'CRITICAL',
     status: 'APPROVED',
@@ -177,7 +177,7 @@ export const mockTasks = [
   },
   {
     id: 'TSK-1006',
-    department: 'Signal',
+    department: 'signal',
     priority_score: 91.2,
     severity: 'CRITICAL',
     status: 'CONFLICT',
@@ -187,7 +187,7 @@ export const mockTasks = [
   },
   {
     id: 'TSK-1002',
-    department: 'Traction',
+    department: 'traction',
     priority_score: 88.0,
     severity: 'HIGH',
     status: 'APPROVED',
@@ -197,7 +197,7 @@ export const mockTasks = [
   },
   {
     id: 'TSK-1003',
-    department: 'Signal',
+    department: 'signal',
     priority_score: 82.5,
     severity: 'HIGH',
     status: 'PENDING',
@@ -207,7 +207,7 @@ export const mockTasks = [
   },
   {
     id: 'TSK-1005',
-    department: 'Traction',
+    department: 'traction',
     priority_score: 74.0,
     severity: 'MEDIUM',
     status: 'APPROVED',
@@ -217,7 +217,7 @@ export const mockTasks = [
   },
   {
     id: 'TSK-1004',
-    department: 'Engineering',
+    department: 'engineering',
     priority_score: 65.4,
     severity: 'MEDIUM',
     status: 'PENDING',
@@ -227,7 +227,7 @@ export const mockTasks = [
   },
   {
     id: 'TSK-1007',
-    department: 'Engineering',
+    department: 'engineering',
     priority_score: 42.1,
     severity: 'LOW',
     status: 'PENDING',
@@ -237,7 +237,7 @@ export const mockTasks = [
   },
   {
     id: 'TSK-1008',
-    department: 'Traction',
+    department: 'traction',
     priority_score: 38.0,
     severity: 'LOW',
     status: 'PENDING',
@@ -303,9 +303,9 @@ export const mockCorridorTimeline = {
 };
 
 export function getMockData(path) {
-  if (path.startsWith('/reports/summary')) return mockSummary;
-  if (path.startsWith('/blocks')) return { plans: mockPlans };
-  if (path.startsWith('/tasks') && !path.includes('/explain')) return { tasks: mockTasks };
+  if (path.startsWith('/reports/summary')) {return mockSummary;}
+  if (path.startsWith('/blocks')) {return { plans: mockPlans };}
+  if (path.startsWith('/tasks') && !path.includes('/explain')) {return { tasks: mockTasks };}
   if (path.includes('/explain')) {
     const match = path.match(/\/tasks\/([^/]+)\/explain/);
     const id = match ? match[1] : 'TSK-1001';
@@ -320,8 +320,6 @@ export function getMockData(path) {
       severity: task.severity
     };
   }
-  if (path.includes('/timeline') || path.startsWith('/corridors')) {
-    return mockCorridorTimeline;
-  }
+  if (path.includes('/timeline') || path.startsWith('/corridors')) {return mockCorridorTimeline;}
   return null;
 }

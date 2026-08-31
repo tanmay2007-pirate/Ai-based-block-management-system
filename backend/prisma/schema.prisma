@@ -47,7 +47,7 @@ model Asset {
   last_inspection_date        DateTime?
   last_major_maintenance_date DateTime?
   manufacturer                String?
-  replacement_cost_estimate   Float?
+  replacement_cost_estimate   Decimal? @db.Decimal(15, 2)
   section                     String?
   station_location            String?
   total_past_defects          Int?
@@ -277,7 +277,7 @@ model MaintenanceHistory {
   actual_repair_duration_min Int?
   asset_id                   String?
   completed_date             DateTime?
-  cost_incurred              Float?
+  cost_incurred              Decimal? @db.Decimal(15, 2)
   crew_size_used             Int?
   days_to_failure            Int?
   delay_reason               String?

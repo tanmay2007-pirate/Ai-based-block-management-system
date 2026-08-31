@@ -4,41 +4,14 @@ const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
 const { roleCheck } = require('../middleware/roleCheck');
 const { generateSchedule } = require('../services/aiScore');
+const { validate, blockDemandSchema, scheduleGenerateSchema } = require('../middleware/validate');
 
 const router = express.Router();
-
-function validateProposedChanges(value) {
-  if (value === undefined) return { moves: [], combines: [] };
-  if (!value || Array.isArray(value) || typeof value !== 'object'
-    || !Array.isArray(value.moves) || !Array.isArray(value.combines)) {
-    const error = new Error('proposedChanges must contain moves and combines arrays');
-    error.status = 400;
-    throw error;
-  }
-  const validIso = item => typeof item === 'string' && !Number.isNaN(Date.parse(item));
-  for (const move of value.moves) {
-    if (!move || typeof move.taskId !== 'string' || !validIso(move.newStartTime) || typeof move.corridorId !== 'string') {
-      const error = new Error('Each move requires taskId, ISO8601 newStartTime, and corridorId');
-      error.status = 400;
-      throw error;
-    }
-  }
-  for (const combine of value.combines) {
-    if (!combine || !Array.isArray(combine.taskIds) || combine.taskIds.length < 2
-      || combine.taskIds.some(id => typeof id !== 'string') || typeof combine.corridorId !== 'string'
-      || !validIso(combine.startTime) || !validIso(combine.endTime)) {
-      const error = new Error('Each combine requires taskIds, corridorId, ISO8601 startTime, and endTime');
-      error.status = 400;
-      throw error;
-    }
-  }
-  return value;
-}
 
 function schedulePayload(tasks, assets, horizon, proposedChanges) {
   const byId = new Map(assets.map((asset) => [String(asset.id).trim().toLowerCase(), asset]));
   const assetForTask = (task) => {
-    if (!task.asset_id) return null;
+    if (!task.asset_id) {return null;}
     return byId.get(String(task.asset_id).trim().toLowerCase()) || null;
   };
 
@@ -82,41 +55,38 @@ async function persistSchedule(result, horizon, io) {
       },
     });
   }));
-  if (io) persisted.forEach(plan => io.emit('block-created', plan));
+  if (io) {persisted.forEach(plan => io.emit('block-created', plan));}
   return persisted;
 }
 
 // POST /api/schedule/generate — ask Python for a plan, then persist it in PostgreSQL
-router.post('/generate', auth, roleCheck(['control_office', 'admin']), async (req, res, next) => {
+router.post('/generate', auth, roleCheck(['control_office', 'admin']), validate(scheduleGenerateSchema), async (req, res, next) => {
   try {
-    const horizon = req.body.horizon === 'month' ? 'month' : 'week';
-    const proposedChanges = validateProposedChanges(req.body.proposedChanges);
+    const { horizon, proposedChanges } = req.validated.body;
     const { tasks, assets } = await loadPendingTasks();
-    const result = await generateSchedule(schedulePayload(tasks, assets, horizon, proposedChanges));
-    const persisted = await persistSchedule(result, horizon, req.app.get('io'));
+    const result = await generateSchedule(schedulePayload(tasks, assets, horizon || 'week', proposedChanges));
+    const persisted = await persistSchedule(result, horizon || 'week', req.app.get('io'));
     res.json({ ...result, persisted_block_plan_ids: persisted.map((plan) => plan.id) });
   } catch (err) { next(err); }
 });
 
 // POST /api/schedule/commit-proposed — commit the exact simulated pinned plan
-router.post('/commit-proposed', auth, roleCheck(['control_office', 'admin']), async (req, res, next) => {
+router.post('/commit-proposed', auth, roleCheck(['control_office', 'admin']), validate(scheduleGenerateSchema), async (req, res, next) => {
   try {
-    const proposedChanges = validateProposedChanges(req.body.proposedChanges);
-    const horizon = req.body.horizon === 'month' ? 'month' : 'week';
+    const { horizon, proposedChanges } = req.validated.body;
     const { tasks, assets } = await loadPendingTasks();
-    const result = await generateSchedule(schedulePayload(tasks, assets, horizon, proposedChanges));
-    const persisted = await persistSchedule(result, horizon, req.app.get('io'));
+    const result = await generateSchedule(schedulePayload(tasks, assets, horizon || 'week', proposedChanges));
+    const persisted = await persistSchedule(result, horizon || 'week', req.app.get('io'));
     res.status(201).json({ ...result, committed: true, persisted_block_plan_ids: persisted.map((plan) => plan.id) });
   } catch (err) { next(err); }
 });
 
 // POST /api/schedule/simulate — dry-run scheduling without database writes
-router.post('/simulate', auth, async (req, res, next) => {
+router.post('/simulate', auth, validate(scheduleGenerateSchema), async (req, res, next) => {
   try {
-    const horizon = req.body.horizon === 'month' ? 'month' : 'week';
-    const proposedChanges = validateProposedChanges(req.body.proposedChanges);
+    const { horizon, proposedChanges } = req.validated.body;
     const { tasks, assets } = await loadPendingTasks();
-    const result = await generateSchedule(schedulePayload(tasks, assets, horizon, proposedChanges));
+    const result = await generateSchedule(schedulePayload(tasks, assets, horizon || 'week', proposedChanges));
     res.json({ dry_run: true, ...result });
   } catch (err) { next(err); }
 });
@@ -130,18 +100,15 @@ router.get('/demands', auth, async (req, res, next) => {
 });
 
 // POST /api/schedule/demands — raise block demand
-router.post('/demands', auth, async (req, res, next) => {
+router.post('/demands', auth, validate(blockDemandSchema), async (req, res, next) => {
   try {
-    const { section, from_km, to_km, demanded_for, duration_hours, reason } = req.body;
-    if (!section || !demanded_for || !duration_hours) {
-      return res.status(400).json({ error: 'Bad Request', message: 'section, demanded_for, duration_hours required' });
-    }
+    const { section, from_km, to_km, demanded_for, duration_hours, reason } = req.validated.body;
     const demand = await prisma.blockDemand.create({
       data: { section, from_km: from_km || 0, to_km: to_km || 0, demanded_by: req.user.department,
                demanded_for: new Date(demanded_for), duration_hours: parseFloat(duration_hours), reason },
     });
     const io = req.app.get('io');
-    if (io) io.emit('block-demand-created', demand);
+    if (io) {io.emit('block-demand-created', demand);}
     res.status(201).json({ demand });
   } catch (err) { next(err); }
 });

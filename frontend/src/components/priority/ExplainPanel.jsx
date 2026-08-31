@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
-import { NavLink, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 
 function scoreValue(data) {
@@ -16,8 +16,8 @@ function scoreValue(data) {
 }
 
 function getPriority(score) {
-  if (score >= 80) return 'CRITICAL';
-  if (score >= 50) return 'HIGH';
+  if (score >= 80) {return 'CRITICAL';}
+  if (score >= 50) {return 'HIGH';}
   return 'MEDIUM';
 }
 
@@ -54,7 +54,7 @@ export default function ExplainPanel({ taskId: providedTaskId, onClose }) {
   const [loading, setLoading] = useState(Boolean(taskId));
 
   useEffect(() => {
-    if (!taskId) return;
+    if (!taskId) {return;}
 
     setLoading(true);
     api
@@ -93,7 +93,7 @@ export default function ExplainPanel({ taskId: providedTaskId, onClose }) {
     }));
   const factors = backendFactors.length ? backendFactors : contributionFactors;
 
-  if (!taskId) return null;
+  if (!taskId) {return null;}
 
   if (loading) {
     return (

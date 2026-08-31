@@ -10,6 +10,7 @@ const auth = require('../middleware/auth');
 const { roleCheck } = require('../middleware/roleCheck');
 const { normalizeTmsDefect, normalizeTdmsDefect, normalizeSmmsDefect } = require('../services/etl');
 const { scoreDefect, scoreBatch } = require('../services/aiScore');
+const { validate, tmsDefectSchema, tdmsDefectSchema, smmsDefectSchema } = require('../middleware/validate');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { files: 1, fileSize: 10 * 1024 * 1024 } });
@@ -65,22 +66,22 @@ function validateBulkRows(rows, headers, assets, actualHeaders = (rows.length ? 
   rows.forEach((row, index) => {
     const reasons = [];
     headers.forEach((header) => {
-      if (header !== 'description' && (row[header] === undefined || row[header] === '')) reasons.push(`${header} is required`);
+      if (header !== 'description' && (row[header] === undefined || row[header] === '')) {reasons.push(`${header} is required`);}
     });
     if (row.location_km !== undefined && row.location_km !== '' && !Number.isFinite(Number(row.location_km))) {
       reasons.push('location_km must be a number');
     }
-    if (row.asset_id && !assetIds.has(String(row.asset_id).trim())) reasons.push('asset_id does not exist in core.assets');
-    if (reasons.length) failures.push({ row: index + 2, reasons });
+    if (row.asset_id && !assetIds.has(String(row.asset_id).trim())) {reasons.push('asset_id does not exist in core.assets');}
+    if (reasons.length) {failures.push({ row: index + 2, reasons });}
   });
   return { failures };
 }
 
 function normalizeBulkRow(row, department, userId) {
   const data = { ...row, created_by: userId };
-  if (data.location_km !== undefined && data.location_km !== '') data.location_km = Number(data.location_km);
-  if (department === 'tms') return data;
-  if (department === 'tdms') return data;
+  if (data.location_km !== undefined && data.location_km !== '') {data.location_km = Number(data.location_km);}
+  if (department === 'tms') {return data;}
+  if (department === 'tdms') {return data;}
   return data;
 }
 
@@ -109,12 +110,12 @@ function isXlsxZip(buffer) {
 }
 
 function cellValue(value) {
-  if (value === null || value === undefined) return '';
+  if (value === null || value === undefined) {return '';}
   if (value instanceof Date || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
     return value;
   }
-  if (value.richText) return value.richText.map(item => item.text).join('');
-  if (value.result !== undefined) return value.result;
+  if (value.richText) {return value.richText.map(item => item.text).join('');}
+  if (value.result !== undefined) {return value.result;}
   return String(value);
 }
 
@@ -134,7 +135,7 @@ async function readWorkbookRows(buffer) {
     throw invalidWorkbook;
   }
   const worksheet = workbook.worksheets[0];
-  if (!worksheet) return [];
+  if (!worksheet) {return [];}
 
   const columnCount = worksheet.columnCount;
   const headerRow = worksheet.getRow(1);
@@ -143,7 +144,7 @@ async function readWorkbookRows(buffer) {
   for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber += 1) {
     const row = worksheet.getRow(rowNumber);
     const values = Array.from({ length: columnCount }, (_, index) => cellValue(row.getCell(index + 1).value));
-    if (values.every(value => value === '')) continue;
+    if (values.every(value => value === '')) {continue;}
     rows.push(Object.fromEntries(headers.map((header, index) => [header, values[index]])));
   }
   rows.headers = headers;
@@ -175,7 +176,7 @@ async function handleBulkUpload(req, res, next, department) {
     }
 
     const rows = await readWorkbookRows(req.file.buffer);
-    if (!rows.length) return res.status(400).json({ error: 'Bad Request', message: 'The workbook must contain a header row and at least one data row' });
+    if (!rows.length) {return res.status(400).json({ error: 'Bad Request', message: 'The workbook must contain a header row and at least one data row' });}
 
     const assets = await prisma.asset.findMany({ select: { id: true } });
     const validation = validateBulkRows(rows, config.headers, assets, rows.headers);
@@ -223,7 +224,7 @@ async function handleBulkUpload(req, res, next, department) {
 
     const summary = { department: config.department, records: records.length, scored: scores.length };
     const io = req.app.get('io');
-    if (io) io.emit('bulk-tasks-added', { count: records.length, summary, tasks: scoredTasks });
+    if (io) {io.emit('bulk-tasks-added', { count: records.length, summary, tasks: scoredTasks });}
     res.status(201).json({ message: `${config.department} defects uploaded`, ...summary, failed_rows: [], tasks: scoredTasks });
   } catch (error) {
     next(error);
@@ -293,7 +294,7 @@ async function applyAiScore(task) {
       asset_age_years: assetAgeYears,
       total_past_defects: asset?.total_past_defects || 0,
     });
-    if (scoreResult?.priority_score === undefined) return task;
+    if (scoreResult?.priority_score === undefined) {return task;}
 
     const scoredTask = await prisma.maintenanceTask.update({
       where: { id: task.id },
@@ -311,13 +312,9 @@ async function applyAiScore(task) {
 // ============================================================
 
 // POST /api/tms/defects — engineering only
-router.post('/tms/defects', auth, roleCheck(['engineering', 'admin']), async (req, res, next) => {
+router.post('/tms/defects', auth, roleCheck(['engineering', 'admin']), validate(tmsDefectSchema), async (req, res, next) => {
   try {
-    const { asset_id, asset_type, location_km, defect_type, severity, description, reported_by } = req.body;
-
-    if (!asset_type || !defect_type || !severity) {
-      return res.status(400).json({ error: 'Bad Request', message: 'asset_type, defect_type, severity are required' });
-    }
+    const { asset_id, asset_type, location_km, defect_type, severity, description, reported_by } = req.validated.body;
 
     const record = await prisma.trackMaintenance.create({
       data: { asset_id, asset_type, location_km, defect_type, severity, description, reported_by, created_by: req.user.id },
@@ -325,15 +322,12 @@ router.post('/tms/defects', auth, roleCheck(['engineering', 'admin']), async (re
 
     await writeAuditLog({ action: 'INSERT', table_name: 'tms.track_maintenance', record_id: record.id, new_data: record, user: req.user });
 
-    // ETL: normalize into planning.maintenance_tasks
     const task = await normalizeTmsDefect(record);
 
-    // AI score (non-blocking — if AI service down, we continue)
     const scoredTask = await applyAiScore(task);
 
-    // Emit Socket.IO event
     const io = req.app.get('io');
-    if (io) io.emit('task-added', { task: scoredTask, source: 'tms' });
+    if (io) {io.emit('task-added', { task: scoredTask, source: 'tms' });}
 
     res.status(201).json({ message: 'TMS defect added', record, task: scoredTask });
   } catch (err) {
@@ -353,7 +347,7 @@ router.delete('/tms/defects/:id', auth, roleCheck(['engineering', 'admin']), asy
     }
 
     // Soft delete
-    const deleted = await prisma.trackMaintenance.update({
+    await prisma.trackMaintenance.update({
       where: { id },
       data: { is_deleted: true, deleted_at: new Date(), deleted_by: req.user.id },
     });
@@ -384,11 +378,11 @@ router.delete('/tms/defects/:id', auth, roleCheck(['engineering', 'admin']), asy
       } else {
         await prisma.maintenanceTask.update({ where: { id: task.id }, data: { is_deleted: true } });
       }
-    }
 
-    // Emit Socket.IO event
-    const io = req.app.get('io');
-    if (io) io.emit('task-deleted', { task_id: task?.id, source_id: id, source: 'tms' });
+      // Emit Socket.IO event
+      const io = req.app.get('io');
+      if (io) {io.emit('task-deleted', { task_id: task.id, source_id: id, source: 'tms' });}
+    }
 
     res.json({ message: 'TMS defect soft-deleted', id });
   } catch (err) {
@@ -400,13 +394,9 @@ router.delete('/tms/defects/:id', auth, roleCheck(['engineering', 'admin']), asy
 // TDMS DEFECTS
 // ============================================================
 
-router.post('/tdms/defects', auth, roleCheck(['traction', 'admin']), async (req, res, next) => {
+router.post('/tdms/defects', auth, roleCheck(['traction', 'admin']), validate(tdmsDefectSchema), async (req, res, next) => {
   try {
-    const { asset_id, loco_number, loco_type, defect_type, severity, description, depot, reported_by } = req.body;
-
-    if (!loco_number || !loco_type || !defect_type || !severity) {
-      return res.status(400).json({ error: 'Bad Request', message: 'loco_number, loco_type, defect_type, severity are required' });
-    }
+    const { asset_id, loco_number, loco_type, defect_type, severity, description, depot, reported_by } = req.validated.body;
 
     const record = await prisma.tractionMaintenance.create({
       data: { asset_id, loco_number, loco_type, defect_type, severity, description, depot, reported_by, created_by: req.user.id },
@@ -419,7 +409,7 @@ router.post('/tdms/defects', auth, roleCheck(['traction', 'admin']), async (req,
     const scoredTask = await applyAiScore(task);
 
     const io = req.app.get('io');
-    if (io) io.emit('task-added', { task: scoredTask, source: 'tdms' });
+    if (io) {io.emit('task-added', { task: scoredTask, source: 'tdms' });}
 
     res.status(201).json({ message: 'TDMS defect added', record, task: scoredTask });
   } catch (err) {
@@ -437,7 +427,7 @@ router.delete('/tdms/defects/:id', auth, roleCheck(['traction', 'admin']), async
       return res.status(404).json({ error: 'Not Found', message: 'Defect not found or already deleted' });
     }
 
-    const deleted = await prisma.tractionMaintenance.update({
+    await prisma.tractionMaintenance.update({
       where: { id },
       data: { is_deleted: true, deleted_at: new Date(), deleted_by: req.user.id },
     });
@@ -465,10 +455,10 @@ router.delete('/tdms/defects/:id', auth, roleCheck(['traction', 'admin']), async
       } else {
         await prisma.maintenanceTask.update({ where: { id: task.id }, data: { is_deleted: true } });
       }
-    }
 
-    const io = req.app.get('io');
-    if (io) io.emit('task-deleted', { task_id: task?.id, source_id: id, source: 'tdms' });
+      const io = req.app.get('io');
+      if (io) {io.emit('task-deleted', { task_id: task.id, source_id: id, source: 'tdms' });}
+    }
 
     res.json({ message: 'TDMS defect soft-deleted', id });
   } catch (err) {
@@ -480,13 +470,9 @@ router.delete('/tdms/defects/:id', auth, roleCheck(['traction', 'admin']), async
 // SMMS DEFECTS
 // ============================================================
 
-router.post('/smms/defects', auth, roleCheck(['signal', 'admin']), async (req, res, next) => {
+router.post('/smms/defects', auth, roleCheck(['signal', 'admin']), validate(smmsDefectSchema), async (req, res, next) => {
   try {
-    const { asset_id, signal_id, signal_type, location_km, defect_type, severity, description, reported_by } = req.body;
-
-    if (!signal_id || !signal_type || !defect_type || !severity) {
-      return res.status(400).json({ error: 'Bad Request', message: 'signal_id, signal_type, defect_type, severity are required' });
-    }
+    const { asset_id, signal_id, signal_type, location_km, defect_type, severity, description, reported_by } = req.validated.body;
 
     const record = await prisma.signallingMaintenance.create({
       data: { asset_id, signal_id, signal_type, location_km, defect_type, severity, description, reported_by, created_by: req.user.id },
@@ -499,7 +485,7 @@ router.post('/smms/defects', auth, roleCheck(['signal', 'admin']), async (req, r
     const scoredTask = await applyAiScore(task);
 
     const io = req.app.get('io');
-    if (io) io.emit('task-added', { task: scoredTask, source: 'smms' });
+    if (io) {io.emit('task-added', { task: scoredTask, source: 'smms' });}
 
     res.status(201).json({ message: 'SMMS defect added', record, task: scoredTask });
   } catch (err) {
@@ -517,7 +503,7 @@ router.delete('/smms/defects/:id', auth, roleCheck(['signal', 'admin']), async (
       return res.status(404).json({ error: 'Not Found', message: 'Defect not found or already deleted' });
     }
 
-    const deleted = await prisma.signallingMaintenance.update({
+    await prisma.signallingMaintenance.update({
       where: { id },
       data: { is_deleted: true, deleted_at: new Date(), deleted_by: req.user.id },
     });
@@ -545,10 +531,10 @@ router.delete('/smms/defects/:id', auth, roleCheck(['signal', 'admin']), async (
       } else {
         await prisma.maintenanceTask.update({ where: { id: task.id }, data: { is_deleted: true } });
       }
-    }
 
-    const io = req.app.get('io');
-    if (io) io.emit('task-deleted', { task_id: task?.id, source_id: id, source: 'smms' });
+      const io = req.app.get('io');
+      if (io) {io.emit('task-deleted', { task_id: task.id, source_id: id, source: 'smms' });}
+    }
 
     res.json({ message: 'SMMS defect soft-deleted', id });
   } catch (err) {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import useFetch from '../hooks/useFetch';
-import CorridorTimeline from '../components/twin/CorridorTimeline';
+import CorridorTimeline from '../components/CorridorTimeline';
 
 export default function DigitalTwin() {
   const [corridor, setCorridor] = useState('CSMT-Kalyan');

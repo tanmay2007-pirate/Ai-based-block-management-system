@@ -9,7 +9,7 @@ export default function DeleteConfirmButton({ task, onDeleted }) {
   const source = sources[task.department];
 
   const remove = async () => {
-    if (!window.confirm('This cannot be easily undone. Delete this defect?')) return;
+    if (!window.confirm('This cannot be easily undone. Delete this defect?')) {return;}
     setBusy(true);
     setError('');
     try {
@@ -22,6 +22,6 @@ export default function DeleteConfirmButton({ task, onDeleted }) {
     }
   };
 
-  if (!source || !task.source_id) return null;
+  if (!source || !task.source_id) {return null;}
   return <><button className="danger-button" onClick={remove} disabled={busy}>{busy ? 'Deleting…' : 'Delete'}</button>{error && <span className="inline-error">{error}</span>}</>;
 }

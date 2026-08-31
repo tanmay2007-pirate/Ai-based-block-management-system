@@ -3,7 +3,7 @@
 // Must be the LAST middleware registered in server.js
 // ============================================================
 
-function errorHandler(err, req, res, next) {
+function errorHandler(err, req, res, _next) {
   console.error('[ERROR]', err.message, err.stack);
 
   // Prisma known errors

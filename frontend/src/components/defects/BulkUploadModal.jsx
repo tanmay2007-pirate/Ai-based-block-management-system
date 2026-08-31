@@ -10,7 +10,7 @@ export default function BulkUploadModal({ onComplete }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
-  if (!department || !['TMS', 'TDMS', 'SMMS'].includes(department)) return null;
+  if (!department || !['TMS', 'TDMS', 'SMMS'].includes(department)) {return null;}
   const path = `/${department.toLowerCase()}/defects`;
 
   const downloadTemplate = async (event) => {
@@ -29,7 +29,7 @@ export default function BulkUploadModal({ onComplete }) {
   };
 
   const upload = async () => {
-    if (!file) return setError('Choose an .xlsx file first');
+    if (!file) {return setError('Choose an .xlsx file first');}
     setBusy(true);
     setError('');
     setResult(null);
@@ -48,7 +48,7 @@ export default function BulkUploadModal({ onComplete }) {
   };
 
   return <div className="bulk-upload">
-    <a href={`${path}/template`} onClick={downloadTemplate}>Download Template</a>
+    <a href="#" onClick={downloadTemplate}>Download Template</a>
     <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={event => setFile(event.target.files?.[0] || null)} />
     <button className="secondary" onClick={upload} disabled={busy}>{busy ? 'Uploading…' : 'Upload .xlsx'}</button>
     {error && <p className="error">{error}</p>}

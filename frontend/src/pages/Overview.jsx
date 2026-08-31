@@ -20,7 +20,7 @@ function AnimatedNumber({ value, duration = 900 }) {
     let animationFrame;
 
     const animate = timestamp => {
-      if (!startTime) startTime = timestamp;
+      if (!startTime) {startTime = timestamp;}
 
       const progress = Math.min(
         (timestamp - startTime) / duration,
@@ -278,7 +278,7 @@ export default function Overview() {
         <div className="overview-section-heading">
           <div>
             <span className="eyebrow">OPERATIONS SNAPSHOT</span>
-            <h2>Today's planning activity</h2>
+            <h2>Today&apos;s planning activity</h2>
           </div>
 
           <NavLink to="/calendar">View all blocks →</NavLink>

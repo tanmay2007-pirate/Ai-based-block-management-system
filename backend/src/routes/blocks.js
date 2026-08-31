@@ -3,6 +3,7 @@ const express = require('express');
 const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
 const { roleCheck } = require('../middleware/roleCheck');
+const { validate, blockPlanSchema, idParamSchema } = require('../middleware/validate');
 
 const router = express.Router();
 
@@ -80,8 +81,8 @@ router.get('/', auth, async (req, res, next) => {
       const storedStatus = { PROPOSED: 'pending', PENDING: 'pending', APPROVED: 'approved', REJECTED: 'rejected' }[String(status).toUpperCase()];
       where.status = storedStatus || status;
     }
-    if (section) where.section = section;
-    if (week_start) where.week_start = { gte: new Date(week_start) };
+    if (section) {where.section = section;}
+    if (week_start) {where.week_start = { gte: new Date(week_start) };}
 
     const plans = await prisma.blockPlan.findMany({
       where,
@@ -99,18 +100,15 @@ router.get('/:id', auth, async (req, res, next) => {
       where: { id: req.params.id },
       include: { trains: { include: { task: true } }, conflicts: true, block_demand: true },
     });
-    if (!plan) return res.status(404).json({ error: 'Not Found', message: 'Block plan not found' });
+    if (!plan) {return res.status(404).json({ error: 'Not Found', message: 'Block plan not found' });}
     res.json({ plan: normalizeStatus(plan) });
   } catch (err) { next(err); }
 });
 
 // POST /api/blocks — create block plan (control_office/admin only)
-router.post('/', auth, roleCheck(['control_office', 'admin']), async (req, res, next) => {
+router.post('/', auth, roleCheck(['control_office', 'admin']), validate(blockPlanSchema), async (req, res, next) => {
   try {
-    const { section, from_km, to_km, planned_start, planned_end, week_start, week_end, block_demand_id } = req.body;
-    if (!section || !planned_start || !planned_end) {
-      return res.status(400).json({ error: 'Bad Request', message: 'section, planned_start, planned_end required' });
-    }
+    const { section, from_km, to_km, planned_start, planned_end, week_start, week_end, block_demand_id } = req.validated.body;
     const plan = await prisma.blockPlan.create({
       data: { section, from_km, to_km, planned_start: new Date(planned_start), planned_end: new Date(planned_end),
                week_start: week_start ? new Date(week_start) : new Date(planned_start),
@@ -126,22 +124,22 @@ router.post('/', auth, roleCheck(['control_office', 'admin']), async (req, res, 
 });
 
 // PATCH /api/blocks/:id/approve — approve a block plan
-router.patch('/:id/approve', auth, roleCheck(['control_office', 'admin']), async (req, res, next) => {
+router.patch('/:id/approve', auth, roleCheck(['control_office', 'admin']), validate(idParamSchema), async (req, res, next) => {
   try {
-    const updated = await transitionPlan(req.params.id, 'APPROVED', req.user);
+    const updated = await transitionPlan(req.validated.params.id, 'APPROVED', req.user);
     const io = req.app.get('io');
-    if (io) io.emit('block-approved', normalizeStatus(updated));
+    if (io) {io.emit('block-approved', normalizeStatus(updated));}
     res.json({ message: 'Block plan approved', plan: normalizeStatus(updated) });
   } catch (err) { next(err); }
 });
 
 // PATCH /api/blocks/:id — approve or reject a proposed block plan
-router.patch('/:id', auth, roleCheck(['control_office', 'admin']), async (req, res, next) => {
+router.patch('/:id', auth, roleCheck(['control_office', 'admin']), validate(idParamSchema), async (req, res, next) => {
   try {
-    const updated = await transitionPlan(req.params.id, req.body.status, req.user);
+    const updated = await transitionPlan(req.validated.params.id, req.body.status, req.user);
     const publicPlan = normalizeStatus(updated);
     const io = req.app.get('io');
-    if (io) io.emit(publicPlan.status === 'APPROVED' ? 'block-approved' : 'block-rejected', publicPlan);
+    if (io) {io.emit(publicPlan.status === 'APPROVED' ? 'block-approved' : 'block-rejected', publicPlan);}
     res.json({ message: `Block plan ${publicPlan.status.toLowerCase()}`, plan: publicPlan });
   } catch (err) { next(err); }
 });
