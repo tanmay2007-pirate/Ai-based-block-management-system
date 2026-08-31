@@ -93,7 +93,7 @@ router.get('/', auth, validate(queryPaginationSchema), async (req, res, next) =>
       where.department = req.user.department;
     }
 
-    const [tasks, total] = await Promise.all([
+    const [tasks, total, criticalCount, mediumCount, lowCount] = await Promise.all([
       prisma.maintenanceTask.findMany({
         where,
         orderBy: { priority_score: 'desc' },
@@ -101,9 +101,23 @@ router.get('/', auth, validate(queryPaginationSchema), async (req, res, next) =>
         take: parseInt(limit),
       }),
       prisma.maintenanceTask.count({ where }),
+      prisma.maintenanceTask.count({ where: { ...where, priority_score: { gte: 60 } } }),
+      prisma.maintenanceTask.count({ where: { ...where, priority_score: { gte: 40, lt: 60 } } }),
+      prisma.maintenanceTask.count({ where: { ...where, priority_score: { lt: 40 } } }),
     ]);
 
-    res.json({ tasks, total, page: parseInt(page), limit: parseInt(limit) });
+    res.json({
+      tasks,
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      summary: {
+        total,
+        critical: criticalCount,
+        medium: mediumCount,
+        low: lowCount,
+      },
+    });
   } catch (err) { next(err); }
 });
 

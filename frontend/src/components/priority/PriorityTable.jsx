@@ -21,10 +21,10 @@ function PriorityBadge({ score, hasBackendScore }) {
   let tone = 'low';
   let label = 'LOW';
 
-  if (value >= 80) {
+  if (value >= 60) {
     tone = 'critical';
     label = 'CRITICAL';
-  } else if (value >= 50) {
+  } else if (value >= 40) {
     tone = 'medium';
     label = 'MEDIUM';
   }
@@ -141,21 +141,25 @@ export default function PriorityTable() {
   }, [allTasks, department, severity, sortHighFirst]);
 
   const summary = useMemo(() => {
+    if (data?.summary) {
+      return data.summary;
+    }
+
     const scoredTasks = allTasks.filter(
       task => Boolean(task.ai_score_data) || Number(task.priority_score) > 0
     );
 
     const critical = allTasks.filter(
-      task => (Boolean(task.ai_score_data) || Number(task.priority_score) > 0) && Number(task.priority_score) >= 80
+      task => (Boolean(task.ai_score_data) || Number(task.priority_score) > 0) && Number(task.priority_score) >= 60
     ).length;
 
     const medium = scoredTasks.filter(task => {
       const score = Number(task.priority_score) || 0;
-      return score >= 50 && score < 80;
+      return score >= 40 && score < 60;
     }).length;
 
     const low = scoredTasks.filter(
-      task => Number(task.priority_score) < 50
+      task => Number(task.priority_score) < 40
     ).length;
 
     return {
@@ -164,7 +168,7 @@ export default function PriorityTable() {
       low,
       total: totalTasksInDb
     };
-  }, [allTasks, totalTasksInDb]);
+  }, [allTasks, totalTasksInDb, data?.summary]);
 
   const departments = [
     ...new Set(
