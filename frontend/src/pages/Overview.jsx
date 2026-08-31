@@ -312,7 +312,7 @@ export default function Overview() {
           <div className="operation-metric">
             <span className="operation-icon blue">↗</span>
             <div>
-              <strong>{networkAvailability === undefined ? 'â€”' : `${Number(networkAvailability).toFixed(1)}%`}</strong>
+              <strong>{networkAvailability === undefined ? '—' : `${Number(networkAvailability).toFixed(1)}%`}</strong>
               <span>Network availability</span>
             </div>
           </div>

@@ -514,6 +514,13 @@ async function runEtlLoader() {
         throw new Error(`[ETL] ${invalidReferences.length} records reference an unknown asset_id`);
       }
 
+      const existingTaskCount = await prisma.maintenanceTask.count();
+      const existingAssetCount = await prisma.asset.count();
+      if (existingTaskCount > 500 && existingAssetCount > 50) {
+        console.log(`[ETL] Database already populated (${existingTaskCount} tasks, ${existingAssetCount} assets). Skipping initial load.`);
+        return { message: 'Database already populated' };
+      }
+
       console.log('[ETL] Clearing existing data from tables...');
       await prisma.maintenanceHistory.deleteMany({});
       await prisma.maintenanceTask.deleteMany({});

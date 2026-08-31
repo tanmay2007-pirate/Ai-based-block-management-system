@@ -1,4 +1,4 @@
-﻿// src/routes/reports.js — Analytics & reporting endpoints (skeleton)
+// src/routes/reports.js — Analytics & reporting endpoints (skeleton)
 const express = require('express');
 const prisma = require('../lib/prisma');
 const auth = require('../middleware/auth');
@@ -12,7 +12,7 @@ router.get('/summary', auth, async (req, res, next) => {
     const [totalTasks, pendingTasks, approvedPlans, criticalTasks, plans, tasks] = await Promise.all([
       prisma.maintenanceTask.count({ where: { is_deleted: false } }),
       prisma.maintenanceTask.count({ where: { status: 'pending', is_deleted: false } }),
-      prisma.approvedBlockPlan.count(),
+      prisma.blockPlan.count({ where: { status: 'approved' } }),
       prisma.maintenanceTask.count({ where: { severity: 'critical', is_deleted: false } }),
       prisma.blockPlan.findMany({ select: { section: true, planned_start: true, planned_end: true, conflict_flags: true, trains: { include: { task: { select: { department: true } } } } } }),
       prisma.maintenanceTask.findMany({ where: { is_deleted: false }, select: { department: true, status: true, created_at: true } }),
