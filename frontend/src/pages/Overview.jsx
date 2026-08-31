@@ -51,22 +51,18 @@ function AnimatedNumber({ value, duration = 900 }) {
   return <>{displayValue}</>;
 }
 
-function Stat({ label, value, tone = '', icon }) {
+function Stat({ label, value, tone = '', description = 'Updated just now' }) {
   return (
     <div className="stat-card enhanced-stat">
       <div className="stat-top">
         <span>{label}</span>
-
-        <div className={`stat-icon ${tone}`}>
-          {icon}
-        </div>
       </div>
 
       <strong className={tone}>
         <AnimatedNumber value={value} />
       </strong>
 
-      <small>Updated just now</small>
+      <small>{description}</small>
     </div>
   );
 }
@@ -130,7 +126,6 @@ export default function Overview() {
           label="Pending maintenance"
           value={data.pendingTasks ?? '—'}
           tone="orange"
-          icon="!"
           description="Tasks awaiting planning"
         />
 
@@ -138,7 +133,6 @@ export default function Overview() {
           label="Approved blocks"
           value={data.approvedPlans ?? '—'}
           tone="green"
-          icon="✓"
           description="Ready for execution"
         />
 
@@ -146,7 +140,6 @@ export default function Overview() {
           label="Critical defects"
           value={data.criticalTasks ?? '—'}
           tone="red"
-          icon="!"
           description="Field-reported physical defects"
         />
 
@@ -154,7 +147,6 @@ export default function Overview() {
           label="Total tasks"
           value={data.totalTasks ?? '—'}
           tone="blue"
-          icon="Σ"
           description="Maintenance workload"
         />
       </section>

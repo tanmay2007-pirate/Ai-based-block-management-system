@@ -14,5 +14,20 @@ export default function Layout() {
     ['task-added', 'task-deleted', 'bulk-tasks-added', 'tasks-scored', 'block-created', 'block-approved', 'block-rejected', 'schedule-reoptimized'].forEach(event => socket.on(event, refresh));
     return () => socket.disconnect();
   }, []);
-  return <div className="app-shell"><Sidebar /><main><Topbar />{toast && <div className="toast">{toast}</div>}<div className="content"><Outlet /></div></main></div>;
+
+  return (
+    <div className="app-shell">
+      <Topbar />
+      <div className="app-body">
+        <Sidebar />
+        <main className="app-main">
+          {toast && <div className="toast">{toast}</div>}
+          <div className="content">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+    </div>
+  );
 }
+
