@@ -72,19 +72,24 @@ def generate_schedule(payload: dict[str, Any], pinned_assignments: dict[str, Any
     proposed = pinned_assignments if pinned_assignments is not None else payload.get("proposedChanges", {})
     changes = {item.get("taskId"): item for item in proposed.get("moves", [])}
     task_lookup = {task.get("task_id"): task for task in tasks}
+    incompatibilities: list[str] = []
+
     for combine in proposed.get("combines", []):
-        combine_tasks = [task_lookup.get(task_id) for task_id in combine.get("taskIds", [])]
-        if any(task is None for task in combine_tasks):
-            raise ValueError("combine references a task that is not pending")
+        combine_tasks = [task_lookup.get(task_id) for task_id in combine.get("taskIds", []) if task_lookup.get(task_id)]
         for index, task in enumerate(combine_tasks):
             for other in combine_tasks[index + 1:]:
                 compatible, reason = is_compatible(task, other)
                 if not compatible:
-                    raise ValueError(f"Incompatible combined tasks {task['task_id']} and {other['task_id']}: {reason}")
-            changes[task["task_id"]] = {
-                "newStartTime": combine["startTime"], "corridorId": combine["corridorId"],
-                "endTime": combine["endTime"],
-            }
+                    incompatibilities.append(f"Incompatible tasks ({task.get('corridor', 'unknown')} vs {other.get('corridor', 'unknown')}): {reason}")
+                else:
+                    changes[task["task_id"]] = {
+                        "newStartTime": combine["startTime"], "corridorId": combine["corridorId"],
+                        "endTime": combine["endTime"],
+                    }
+                    changes[other["task_id"]] = {
+                        "newStartTime": combine["startTime"], "corridorId": combine["corridorId"],
+                        "endTime": combine["endTime"],
+                    }
     for task in tasks:
         change = changes.get(task.get("task_id"))
         if change:
@@ -99,4 +104,7 @@ def generate_schedule(payload: dict[str, Any], pinned_assignments: dict[str, Any
         "track_downtime_hours": round(sum(block["duration_hours"] for block in result["blocks"]), 2),
         "asset_availability": asset_availability_percentage(result["blocks"], horizon * 24, corridors),
     }
+    result["conflicts"] = incompatibilities
+    if incompatibilities and result["status"] == "OPTIMAL":
+        result["status"] = "CONFLICT"
     return result

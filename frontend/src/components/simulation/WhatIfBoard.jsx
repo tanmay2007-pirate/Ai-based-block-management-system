@@ -54,6 +54,8 @@ export default function WhatIfBoard() {
 
   const onDrop = ({ event, start }) => {
     const plan = event.resource;
+    const taskIds = (plan.trains || []).map(item => item.task_id).filter(Boolean);
+    const idsToMove = taskIds.length > 0 ? taskIds : [plan.id];
 
     setSelectedPlans(current =>
       current.some(item => item.id === plan.id)
@@ -66,37 +68,49 @@ export default function WhatIfBoard() {
     setProposedChanges(current => ({
       ...current,
       moves: [
-        ...current.moves.filter(
-          item => item.taskId !== plan.trains?.[0]?.task_id
-        ),
-        {
-          taskId: plan.trains?.[0]?.task_id || plan.id,
+        ...current.moves.filter(item => !idsToMove.includes(item.taskId)),
+        ...idsToMove.map(tid => ({
+          taskId: tid,
           newStartTime: start.toISOString(),
-          corridorId: plan.section
-        }
+          corridorId: plan.section || 'unknown'
+        }))
       ]
     }));
   };
 
-  const buildChanges = () => ({
-    moves: proposedChanges.moves,
-    combines:
-      selectedPlans.length > 1
-        ? [
-            {
-              taskIds: selectedPlans.flatMap(
-                plan =>
-                  plan.trains
-                    ?.map(item => item.task_id)
-                    .filter(Boolean) || []
-              ),
-              corridorId: selectedPlans[0]?.section,
-              startTime: selectedPlans[0]?.planned_start,
-              endTime: selectedPlans[0]?.planned_end
-            }
-          ]
-        : proposedChanges.combines
-  });
+  const buildChanges = () => {
+    const combines = [];
+    const bySection = {};
+
+    for (const plan of selectedPlans) {
+      const sec = plan.section || 'General';
+      bySection[sec] = bySection[sec] || [];
+      bySection[sec].push(plan);
+    }
+
+    for (const [sec, plans] of Object.entries(bySection)) {
+      if (plans.length > 1) {
+        const taskIds = [
+          ...new Set(
+            plans.flatMap(p => (p.trains || []).map(i => i.task_id).filter(Boolean))
+          )
+        ];
+        if (taskIds.length >= 2) {
+          combines.push({
+            taskIds,
+            corridorId: sec,
+            startTime: new Date(plans[0].planned_start).toISOString(),
+            endTime: new Date(plans[0].planned_end).toISOString()
+          });
+        }
+      }
+    }
+
+    return {
+      moves: proposedChanges.moves,
+      combines: combines.length > 0 ? combines : proposedChanges.combines
+    };
+  };
 
   const simulate = async () => {
     setLoading(true);
@@ -409,6 +423,27 @@ export default function WhatIfBoard() {
                       tone="orange"
                     />
                   </div>
+
+                  {result.conflicts && result.conflicts.length > 0 && (
+                    <div style={{
+                      margin: '12px 0',
+                      padding: '10px 12px',
+                      background: 'rgba(239, 68, 68, 0.08)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      color: '#b91c1c'
+                    }}>
+                      <strong style={{ display: 'block', marginBottom: '4px' }}>
+                        ⚠️ Safety / Operational Conflicts:
+                      </strong>
+                      <ul style={{ margin: 0, paddingLeft: '16px', lineHeight: 1.4 }}>
+                        {result.conflicts.map((c, i) => (
+                          <li key={i}>{c}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   <div className="simulation-result-note">
                     <span>AI PLANNING CHECK</span>
