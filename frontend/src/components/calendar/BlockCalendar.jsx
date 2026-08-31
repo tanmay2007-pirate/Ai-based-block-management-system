@@ -64,16 +64,16 @@ export default function BlockCalendar() {
     return String(plan?.status || '').toUpperCase() === 'REJECTED';
   };
 
-  const isApproved = (plan) => {
-    return String(plan?.status || '').toUpperCase() === 'APPROVED';
-  };
-
   const hasConflict = (plan) => {
     const status = String(plan?.status || '').toUpperCase();
     return (
       (status === 'CONFLICT' || (Array.isArray(plan?.conflicts) && plan.conflicts.length > 0)) &&
       !isRejected(plan)
     );
+  };
+
+  const isApproved = (plan) => {
+    return String(plan?.status || '').toUpperCase() === 'APPROVED' && !hasConflict(plan) && !isRejected(plan);
   };
 
   const isPending = (plan) => {
