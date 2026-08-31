@@ -2498,14 +2498,18 @@ header .user-chip button:hover {
    OVERVIEW HERO SECTION (Centered Modern Layout)
    ========================================================= */
 
+/* =========================================================
+   OVERVIEW HERO SECTION (Centered Modern Layout - Enhanced)
+   ========================================================= */
+
 .overview-hero {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 44px 32px 48px;
-  margin-bottom: 26px;
+  padding: 48px 36px 54px;
+  margin-bottom: 28px;
   background: linear-gradient(180deg, #ffffff 0%, #f4f8fb 100%);
   border: 1px solid #dce7ed;
   border-radius: 20px;
@@ -2519,54 +2523,54 @@ header .user-chip button:hover {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  max-width: 720px;
+  max-width: 780px;
   width: 100%;
 }
 
 .overview-hero-copy .eyebrow {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 1.5px;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 1.6px;
   color: var(--blue);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   display: inline-block;
   text-transform: uppercase;
 }
 
 .overview-hero h1,
 .overview-hero-title {
-  font-size: clamp(28px, 2.6vw, 38px);
+  font-size: clamp(32px, 3vw, 42px);
   font-weight: 850;
   color: var(--navy);
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   letter-spacing: -0.8px;
   line-height: 1.15;
 }
 
 .overview-hero-copy p {
-  font-size: 14.5px;
-  line-height: 1.65;
+  font-size: 15.5px;
+  line-height: 1.7;
   color: var(--text-2);
-  margin: 0 auto 28px;
-  max-width: 620px;
+  margin: 0 auto 32px;
+  max-width: 680px;
 }
 
 .overview-hero-actions {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
+  gap: 20px;
   flex-wrap: wrap;
 }
 
 .overview-live {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 20px;
+  gap: 14px;
+  padding: 12px 22px;
   background: #ffffff;
   border: 1px solid #dce8ee;
-  border-radius: 12px;
+  border-radius: 14px;
   box-shadow: 0 2px 8px rgba(16, 42, 67, 0.04);
   text-align: left;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
@@ -2579,8 +2583,8 @@ header .user-chip button:hover {
 
 .live-halo {
   position: relative;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -2591,8 +2595,8 @@ header .user-chip button:hover {
 
 .live-halo > i,
 .overview-live > i {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #1e8e5a;
   box-shadow: 0 0 0 2px rgba(30, 142, 90, 0.2);
@@ -2613,7 +2617,7 @@ header .user-chip button:hover {
 
 .overview-live strong {
   display: block;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 750;
   color: #1a5e3c;
   line-height: 1.2;
@@ -2621,21 +2625,21 @@ header .user-chip button:hover {
 
 .overview-live span {
   display: block;
-  font-size: 11px;
+  font-size: 11.5px;
   color: #628395;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .overview-primary-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 13px 26px;
-  min-height: 44px;
-  border-radius: 12px;
+  padding: 14px 30px;
+  min-height: 48px;
+  border-radius: 14px;
   background: var(--navy);
   color: #ffffff;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 750;
   text-decoration: none;
   border: none;
@@ -2651,28 +2655,28 @@ header .user-chip button:hover {
 }
 
 /* =========================================================
-   KPI CARDS
+   KPI CARDS (Enhanced Font Sizes & Block Heights)
    ========================================================= */
 
 .overview-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 22px;
+  gap: 20px;
+  margin-bottom: 26px;
   width: 100%;
   box-sizing: border-box;
 }
 
 .overview-stats .stat-card {
-  padding: 18px 20px;
+  padding: 22px 24px;
   background: linear-gradient(145deg, #ffffff 0%, #fbfdfe 100%);
   border: 1px solid #dce6eb;
-  border-radius: 14px;
+  border-radius: 16px;
   box-shadow: 0 3px 10px rgba(16, 42, 67, 0.05);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 140px;
+  min-height: 156px;
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
@@ -2689,13 +2693,13 @@ header .user-chip button:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
-  gap: 8px;
+  margin-bottom: 12px;
+  gap: 10px;
 }
 
 .stat-top > span {
-  font-size: 11.5px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 750;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-2);
@@ -2707,10 +2711,10 @@ header .user-chip button:hover {
 .stat-icon {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  font-size: 14px;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  font-size: 17px;
   font-weight: 800;
   flex-shrink: 0;
 }
@@ -2741,19 +2745,20 @@ header .user-chip button:hover {
 
 .overview-stats .stat-card strong {
   display: block;
-  font-size: clamp(26px, 2.2vw, 32px);
+  font-size: clamp(30px, 2.5vw, 38px);
   line-height: 1;
-  font-weight: 800;
+  font-weight: 850;
   color: var(--navy);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   letter-spacing: -0.8px;
 }
 
 .overview-stats .stat-card small {
   display: block;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--text-3);
-  font-weight: 500;
+  font-weight: 550;
+  line-height: 1.35;
 }
 
 /* =========================================================
@@ -2762,9 +2767,9 @@ header .user-chip button:hover {
 
 .overview-main-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.42fr) minmax(310px, 1fr);
-  gap: 20px;
-  margin-bottom: 22px;
+  grid-template-columns: minmax(0, 1.45fr) minmax(360px, 1fr);
+  gap: 24px;
+  margin-bottom: 26px;
   align-items: stretch;
   width: 100%;
   box-sizing: border-box;
@@ -2775,15 +2780,16 @@ header .user-chip button:hover {
    ========================================================= */
 
 .overview-ai-card {
-  padding: 22px 24px;
+  padding: 28px 30px;
   background: #ffffff;
   border: 1px solid #dce6eb;
-  border-radius: 16px;
-  box-shadow: 0 4px 14px rgba(16, 42, 67, 0.04);
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgba(16, 42, 67, 0.04);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   min-width: 0;
+  min-height: 390px;
   box-sizing: border-box;
 }
 
@@ -2791,22 +2797,22 @@ header .user-chip button:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 8px;
+  gap: 16px;
+  margin-bottom: 10px;
 }
 
 .overview-ai-top .eyebrow {
-  font-size: 10px;
-  font-weight: 800;
+  font-size: 11.5px;
+  font-weight: 850;
   letter-spacing: 1.4px;
   color: var(--blue);
   display: block;
 }
 
 .overview-ai-top h2 {
-  margin: 2px 0 0;
-  font-size: 20px;
-  font-weight: 780;
+  margin: 3px 0 0;
+  font-size: 23px;
+  font-weight: 800;
   color: var(--navy);
   letter-spacing: -0.3px;
   line-height: 1.2;
@@ -2815,44 +2821,43 @@ header .user-chip button:hover {
 .ai-ready {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 7px;
+  padding: 5px 12px;
   border-radius: 999px;
   background: #eef8f3;
   border: 1px solid #d9eee4;
   color: #2b895f;
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 800;
   letter-spacing: 0.5px;
   flex-shrink: 0;
 }
 
 .ai-ready i {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #2b895f;
   box-shadow: 0 0 0 3px rgba(43, 137, 95, 0.15);
 }
 
 .overview-ai-description {
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 14.5px;
+  line-height: 1.65;
   color: var(--text-2);
-  margin: 0 0 16px;
-  max-width: 720px;
+  margin: 0 0 22px;
+  max-width: 760px;
 }
 
 .ai-process {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 6px;
-  padding: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+  padding: 16px;
   background: #f8fafb;
   border: 1px solid #e2eaf0;
-  border-radius: 12px;
-  margin-bottom: 18px;
+  border-radius: 14px;
+  margin-bottom: 24px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -2860,54 +2865,76 @@ header .user-chip button:hover {
 .ai-process-step {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 9px;
+  gap: 14px;
+  padding: 14px 16px;
   background: #ffffff;
   border: 1px solid #dce6eb;
-  border-radius: 9px;
+  border-radius: 12px;
   box-shadow: 0 2px 6px rgba(16, 42, 67, 0.03);
   min-width: 0;
-  min-height: 60px;
+  min-height: 76px;
   box-sizing: border-box;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  transition: background-color 0.22s ease, border-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
 }
 
 .ai-process-step:hover {
-  transform: translateY(-2px);
-  border-color: #bcd5e0;
-  box-shadow: 0 6px 14px rgba(16, 42, 67, 0.06);
+  background: #000000 !important;
+  border-color: #000000 !important;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
+}
+
+.ai-process-step:hover strong {
+  color: #ffffff !important;
+}
+
+.ai-process-step:hover small {
+  color: #cbd5e1 !important;
 }
 
 .ai-process-step > span {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 38px;
+  height: 38px;
   flex-shrink: 0;
-  border-radius: 7px;
-  font-size: 10px;
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 850;
   letter-spacing: 0.3px;
+  transition: transform 0.2s ease;
 }
 
+.ai-process-step:hover > span {
+  transform: scale(1.05);
+}
+
+.ai-process-step:nth-child(1) > span,
 .ai-process-step:nth-of-type(1) > span {
   background: #fff7eb;
   color: #d97706;
   border: 1px solid #fed7aa;
 }
 
+.ai-process-step:nth-child(2) > span,
+.ai-process-step:nth-of-type(2) > span,
 .ai-process-step:nth-of-type(3) > span {
   background: #eff6ff;
   color: #2563eb;
   border: 1px solid #bfdbfe;
 }
 
+.ai-process-step:nth-child(3) > span,
+.ai-process-step:nth-of-type(3) > span,
 .ai-process-step:nth-of-type(5) > span {
   background: #fef2f2;
   color: #dc2626;
   border: 1px solid #fecaca;
 }
 
+.ai-process-step:nth-child(4) > span,
+.ai-process-step:nth-of-type(4) > span,
 .ai-process-step:nth-of-type(7) > span {
   background: #eef8f3;
   color: #16a34a;
@@ -2917,55 +2944,35 @@ header .user-chip button:hover {
 .ai-process-step > div {
   min-width: 0;
   flex: 1;
-  overflow: hidden;
 }
 
 .ai-process-step strong {
   display: block;
-  font-size: 11.5px;
-  font-weight: 750;
+  font-size: 14px;
+  font-weight: 800;
   color: var(--navy);
   line-height: 1.25;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-bottom: 2px;
+  transition: color 0.22s ease;
 }
 
 .ai-process-step small {
   display: block;
-  margin-top: 2px;
-  font-size: 9.5px;
+  font-size: 12px;
+  font-weight: 550;
   color: var(--text-3);
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
+  transition: color 0.22s ease;
 }
 
 .ai-process-line {
-  position: relative;
-  width: 12px;
-  height: 1.5px;
-  background: #cbd8df;
-  flex-shrink: 0;
-}
-
-.ai-process-line::after {
-  content: "";
-  position: absolute;
-  right: -1px;
-  top: 50%;
-  width: 4.5px;
-  height: 4.5px;
-  border-top: 1.5px solid #8ba3af;
-  border-right: 1.5px solid #8ba3af;
-  transform: translateY(-50%) rotate(45deg);
+  display: none;
 }
 
 .overview-ai-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
 }
 
@@ -2973,13 +2980,13 @@ header .user-chip button:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 9px 18px;
-  min-height: 38px;
-  border-radius: 8px;
+  padding: 12px 24px;
+  min-height: 44px;
+  border-radius: 10px;
   background: var(--navy);
   color: #ffffff;
-  font-size: 12.5px;
-  font-weight: 700;
+  font-size: 13.5px;
+  font-weight: 750;
   text-decoration: none;
   border: 1px solid var(--navy);
   box-shadow: 0 3px 10px rgba(16, 42, 67, 0.12);
@@ -2988,22 +2995,23 @@ header .user-chip button:hover {
 }
 
 .ai-primary-button:hover {
-  background: #173f5f;
+  background: #000000;
+  border-color: #000000;
   transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgba(16, 42, 67, 0.18);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 
 .ai-secondary-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 9px 18px;
-  min-height: 38px;
-  border-radius: 8px;
+  padding: 12px 24px;
+  min-height: 44px;
+  border-radius: 10px;
   background: #ffffff;
   color: var(--navy);
-  font-size: 12.5px;
-  font-weight: 700;
+  font-size: 13.5px;
+  font-weight: 750;
   text-decoration: none;
   border: 1px solid #cbd8df;
   transition: all 0.2s ease;
@@ -3011,9 +3019,11 @@ header .user-chip button:hover {
 }
 
 .ai-secondary-button:hover {
-  background: #f8fafc;
-  border-color: #b0c6d2;
+  background: #000000;
+  color: #ffffff;
+  border-color: #000000;
   transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 
 /* =========================================================
@@ -3021,15 +3031,16 @@ header .user-chip button:hover {
    ========================================================= */
 
 .overview-health-card {
-  padding: 22px 24px;
+  padding: 28px 30px;
   background: #ffffff;
   border: 1px solid #dce6eb;
-  border-radius: 16px;
-  box-shadow: 0 4px 14px rgba(16, 42, 67, 0.04);
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgba(16, 42, 67, 0.04);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   min-width: 0;
+  min-height: 390px;
   box-sizing: border-box;
 }
 
@@ -3037,22 +3048,22 @@ header .user-chip button:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 6px;
+  gap: 14px;
+  margin-bottom: 8px;
 }
 
 .overview-card-heading .eyebrow {
-  font-size: 10px;
-  font-weight: 800;
+  font-size: 11.5px;
+  font-weight: 850;
   letter-spacing: 1.4px;
   color: var(--blue);
   display: block;
 }
 
 .overview-card-heading h2 {
-  margin: 2px 0 0;
-  font-size: 20px;
-  font-weight: 780;
+  margin: 3px 0 0;
+  font-size: 23px;
+  font-weight: 800;
   color: var(--navy);
   letter-spacing: -0.3px;
   line-height: 1.2;
@@ -3061,21 +3072,21 @@ header .user-chip button:hover {
 .health-online {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 7px;
+  padding: 5px 12px;
   border-radius: 999px;
   background: #eef8f3;
   border: 1px solid #d9eee4;
   color: #2b895f;
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 800;
   letter-spacing: 0.5px;
   flex-shrink: 0;
 }
 
 .health-online i {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #2b895f;
   box-shadow: 0 0 0 3px rgba(43, 137, 95, 0.15);
@@ -3086,7 +3097,7 @@ header .user-chip button:hover {
   flex-direction: column;
   justify-content: space-between;
   flex: 1;
-  margin-top: 10px;
+  margin-top: 14px;
   width: 100%;
 }
 
@@ -3094,8 +3105,8 @@ header .user-chip button:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 10px 0;
+  gap: 14px;
+  padding: 13px 0;
   border-bottom: 1px solid #edf1f3;
   min-width: 0;
 }
@@ -3108,14 +3119,14 @@ header .user-chip button:hover {
 .network-status-label {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
   flex: 1;
 }
 
 .network-status-label > i {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #2b895f;
   box-shadow: 0 0 0 3px rgba(43, 137, 95, 0.12);
@@ -3129,7 +3140,7 @@ header .user-chip button:hover {
 
 .network-status-label strong {
   display: block;
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 750;
   color: var(--navy);
   line-height: 1.25;
@@ -3140,8 +3151,8 @@ header .user-chip button:hover {
 
 .network-status-label small {
   display: block;
-  margin-top: 2px;
-  font-size: 10px;
+  margin-top: 3px;
+  font-size: 11.5px;
   color: var(--text-3);
   line-height: 1.25;
   white-space: nowrap;
@@ -3151,13 +3162,13 @@ header .user-chip button:hover {
 
 .network-status-value {
   flex-shrink: 0;
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 750;
   color: #2b895f;
   background: #eef8f3;
   border: 1px solid #d9eee4;
-  padding: 3px 9px;
-  border-radius: 6px;
+  padding: 5px 12px;
+  border-radius: 7px;
   white-space: nowrap;
 }
 
@@ -3166,12 +3177,12 @@ header .user-chip button:hover {
    ========================================================= */
 
 .overview-section {
-  padding: 22px 24px;
+  padding: 28px 30px;
   background: #ffffff;
   border: 1px solid #dce6eb;
-  border-radius: 16px;
-  box-shadow: 0 4px 14px rgba(16, 42, 67, 0.04);
-  margin-bottom: 22px;
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgba(16, 42, 67, 0.04);
+  margin-bottom: 26px;
   box-sizing: border-box;
   width: 100%;
 }
@@ -3180,22 +3191,22 @@ header .user-chip button:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 14px;
+  gap: 18px;
+  margin-bottom: 18px;
 }
 
 .overview-section-heading .eyebrow {
-  font-size: 10px;
-  font-weight: 800;
+  font-size: 11.5px;
+  font-weight: 850;
   letter-spacing: 1.4px;
   color: var(--blue);
   display: block;
 }
 
 .overview-section-heading h2 {
-  margin: 2px 0 0;
-  font-size: 20px;
-  font-weight: 780;
+  margin: 3px 0 0;
+  font-size: 23px;
+  font-weight: 800;
   color: var(--navy);
   letter-spacing: -0.3px;
   line-height: 1.2;
@@ -3205,12 +3216,12 @@ header .user-chip button:hover {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
-  border-radius: 8px;
+  padding: 8px 16px;
+  border-radius: 9px;
   background: #f0f6fa;
   border: 1px solid #d7e5ee;
   color: var(--blue-dark);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 750;
   text-decoration: none;
   transition: all 0.16s ease;
@@ -3225,7 +3236,7 @@ header .user-chip button:hover {
 .operations-snapshot {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  gap: 20px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -3233,14 +3244,14 @@ header .user-chip button:hover {
 .operation-metric {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 18px;
+  gap: 18px;
+  padding: 18px 22px;
   background: #f8fafc;
   border: 1px solid #e1e9ef;
-  border-radius: 12px;
+  border-radius: 14px;
   box-shadow: 0 2px 6px rgba(16, 42, 67, 0.03);
   min-width: 0;
-  min-height: 84px;
+  min-height: 96px;
   box-sizing: border-box;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
@@ -3255,11 +3266,11 @@ header .user-chip button:hover {
 .operation-icon {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
-  border-radius: 10px;
-  font-size: 18px;
+  border-radius: 12px;
+  font-size: 20px;
   font-weight: 850;
   background: #edf5f8;
   color: #287099;
@@ -3304,9 +3315,9 @@ header .user-chip button:hover {
 
 .operation-info strong {
   display: block;
-  font-size: clamp(20px, 1.6vw, 25px);
+  font-size: clamp(24px, 2vw, 30px);
   line-height: 1.1;
-  font-weight: 800;
+  font-weight: 850;
   color: var(--navy);
   margin-bottom: 3px;
   white-space: nowrap;
@@ -3317,7 +3328,7 @@ header .user-chip button:hover {
 
 .operation-info span {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 650;
   color: var(--text-2);
   white-space: nowrap;
@@ -3331,21 +3342,21 @@ header .user-chip button:hover {
    ========================================================= */
 
 .overview-workflow-card {
-  padding: 22px 24px;
+  padding: 28px 30px;
   background: #ffffff;
   border: 1px solid #dce6eb;
-  border-radius: 16px;
-  box-shadow: 0 4px 14px rgba(16, 42, 67, 0.04);
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgba(16, 42, 67, 0.04);
   box-sizing: border-box;
   width: 100%;
 }
 
 .workflow-label {
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: 999px;
   background: #f0f4f7;
   border: 1px solid #d8e2e8;
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 800;
   color: var(--text-2);
   letter-spacing: 0.5px;
@@ -3355,8 +3366,8 @@ header .user-chip button:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 14px;
-  gap: 6px;
+  margin-top: 20px;
+  gap: 10px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -3364,14 +3375,17 @@ header .user-chip button:hover {
 .workflow-step {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex: 1;
   min-width: 0;
-  padding: 11px 12px;
+  padding: 14px 16px;
   background: #f8fafb;
   border: 1px solid #e1e9ed;
-  border-radius: 10px;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  border-radius: 12px;
+  min-height: 76px;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: background-color 0.22s ease, border-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
 }
 
 .workflow-step.active {
@@ -3380,39 +3394,61 @@ header .user-chip button:hover {
   box-shadow: 0 2px 8px rgba(16, 42, 67, 0.04);
 }
 
+.workflow-step:hover {
+  background: #000000 !important;
+  border-color: #000000 !important;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
+}
+
+.workflow-step:hover strong {
+  color: #ffffff !important;
+}
+
+.workflow-step:hover small {
+  color: #cbd5e1 !important;
+}
+
 .workflow-step > span {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
-  border-radius: 8px;
-  font-size: 10.5px;
+  border-radius: 9px;
+  font-size: 12px;
   font-weight: 850;
   background: #edf5f8;
   color: #287099;
   border: 1px solid #d0e1ea;
+  transition: transform 0.2s ease;
+}
+
+.workflow-step:hover > span {
+  transform: scale(1.05);
 }
 
 .workflow-step strong {
   display: block;
-  font-size: 12px;
-  font-weight: 750;
+  font-size: 13.5px;
+  font-weight: 800;
   color: var(--navy);
   line-height: 1.25;
+  transition: color 0.22s ease;
 }
 
 .workflow-step small {
   display: block;
-  margin-top: 2px;
-  font-size: 10px;
+  margin-top: 3px;
+  font-size: 11.5px;
   color: var(--text-3);
   line-height: 1.25;
+  transition: color 0.22s ease;
 }
 
 .workflow-connector {
-  width: 14px;
-  height: 1.5px;
+  width: 16px;
+  height: 2px;
   background: #cbd8df;
   flex-shrink: 0;
   margin: 0 2px;
