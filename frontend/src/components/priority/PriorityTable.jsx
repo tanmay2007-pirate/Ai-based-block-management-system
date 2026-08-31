@@ -299,46 +299,46 @@ export default function PriorityTable() {
       <div className="priority-kpis">
         <div className="priority-kpi critical">
           <div className="priority-kpi-top">
-            <span>AI Urgent Priority</span>
+            <span>Critical Priority</span>
             <div>!</div>
           </div>
 
           <strong>{summary.critical}</strong>
 
-          <small>Score ≥ 60 · High traffic & operational risk</small>
+          <small>Immediate planning attention</small>
         </div>
 
         <div className="priority-kpi medium">
           <div className="priority-kpi-top">
-            <span>Scheduled Review</span>
+            <span>Medium Priority</span>
             <div>↗</div>
           </div>
 
           <strong>{summary.medium}</strong>
 
-          <small>Score 40–59 · Standard planning window</small>
+          <small>Requires scheduled review</small>
         </div>
 
         <div className="priority-kpi low">
           <div className="priority-kpi-top">
-            <span>Routine Monitoring</span>
+            <span>Low Priority</span>
             <div>✓</div>
           </div>
 
           <strong>{summary.low}</strong>
 
-          <small>Score &lt; 40 · Low operational disruption</small>
+          <small>Monitor during planning</small>
         </div>
 
         <div className="priority-kpi total">
           <div className="priority-kpi-top">
-            <span>Total Backlog</span>
+            <span>Total Tasks</span>
             <div>Σ</div>
           </div>
 
           <strong>{summary.total}</strong>
 
-          <small>Includes 150 field-reported critical defects</small>
+          <small>Maintenance workload</small>
         </div>
       </div>
 
