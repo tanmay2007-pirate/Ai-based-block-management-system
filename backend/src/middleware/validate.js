@@ -19,7 +19,7 @@ const loginSchema = z.object({
 
 const tmsDefectSchema = z.object({
   body: z.object({
-    asset_id: z.string().uuid('Invalid asset_id format').optional(),
+    asset_id: z.string().min(1).optional(),
     asset_type: z.string().min(1, 'asset_type is required'),
     location_km: z.number().finite('location_km must be a number').optional(),
     defect_type: z.string().min(1, 'defect_type is required'),
@@ -31,7 +31,7 @@ const tmsDefectSchema = z.object({
 
 const tdmsDefectSchema = z.object({
   body: z.object({
-    asset_id: z.string().uuid('Invalid asset_id format').optional(),
+    asset_id: z.string().min(1).optional(),
     loco_number: z.string().min(1, 'loco_number is required'),
     loco_type: z.string().min(1, 'loco_type is required'),
     defect_type: z.string().min(1, 'defect_type is required'),
@@ -44,7 +44,7 @@ const tdmsDefectSchema = z.object({
 
 const smmsDefectSchema = z.object({
   body: z.object({
-    asset_id: z.string().uuid('Invalid asset_id format').optional(),
+    asset_id: z.string().min(1).optional(),
     signal_id: z.string().min(1, 'signal_id is required'),
     signal_type: z.string().min(1, 'signal_type is required'),
     location_km: z.number().finite('location_km must be a number').optional(),

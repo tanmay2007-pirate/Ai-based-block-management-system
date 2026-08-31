@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Calendar as BigCalendar,
   dateFnsLocalizer,
@@ -24,11 +24,24 @@ const localizer = dateFnsLocalizer({
   locales: {}
 });
 
-function StatusBadge({ status }) {
-  const value = String(status || 'PLANNED').toUpperCase();
+function StatusBadge({ status, hasConflict, isRejected }) {
+  let value = String(status || 'PLANNED').toUpperCase();
+  let tone = value.toLowerCase();
+
+  if (isRejected || value === 'REJECTED') {
+    value = 'REJECTED';
+    tone = 'rejected';
+  } else if (hasConflict) {
+    value = 'CONFLICT';
+    tone = 'conflict';
+  } else if (value === 'APPROVED') {
+    tone = 'approved';
+  } else {
+    tone = 'pending';
+  }
 
   return (
-    <span className={`calendar-status ${value.toLowerCase()}`}>
+    <span className={`calendar-status ${tone}`}>
       <i />
       {value.replaceAll('_', ' ')}
     </span>
@@ -40,77 +53,114 @@ export default function BlockCalendar() {
   const [selected, setSelected] = useState(null);
   const [showExplainTaskId, setShowExplainTaskId] = useState(null);
   const [view, setView] = useState(Views.WEEK);
+  const [date, setDate] = useState(new Date('2026-08-31T00:00:00.000Z'));
   const [filter, setFilter] = useState('ALL');
   const [actionError, setActionError] = useState('');
   const { session } = useAuth();
 
   const plans = data?.plans || [];
 
+  const isRejected = (plan) => {
+    return String(plan?.status || '').toUpperCase() === 'REJECTED';
+  };
+
+  const isApproved = (plan) => {
+    return String(plan?.status || '').toUpperCase() === 'APPROVED';
+  };
+
+  const hasConflict = (plan) => {
+    const status = String(plan?.status || '').toUpperCase();
+    return (
+      (status === 'CONFLICT' || (Array.isArray(plan?.conflicts) && plan.conflicts.length > 0)) &&
+      !isRejected(plan)
+    );
+  };
+
+  const isPending = (plan) => {
+    const status = String(plan?.status || '').toUpperCase();
+    return (status === 'PENDING' || status === 'PROPOSED' || status === 'PLANNED') && !hasConflict(plan) && !isRejected(plan);
+  };
+
+  const counts = useMemo(() => {
+    const total = plans.length;
+    const approved = plans.filter(isApproved).length;
+    const conflict = plans.filter(hasConflict).length;
+    const pending = plans.filter(isPending).length;
+    const rejected = plans.filter(isRejected).length;
+    return { total, approved, pending, conflict, rejected };
+  }, [plans]);
+
   const events = useMemo(() => {
     return plans
       .filter(plan => {
-        const status = String(plan.status || '').toUpperCase();
-
-        if (filter === 'ALL') {return true;}
-        if (filter === 'PENDING') {
-          return status === 'PENDING' || status === 'PLANNED';
-        }
-
-        return status === filter;
+        if (filter === 'ALL') return !isRejected(plan); // Keep active view clean by default
+        if (filter === 'APPROVED') return isApproved(plan);
+        if (filter === 'PENDING') return isPending(plan);
+        if (filter === 'CONFLICT') return hasConflict(plan);
+        if (filter === 'REJECTED') return isRejected(plan);
+        return true;
       })
-      .map(plan => ({
-        title: plan.section || 'Railway Block',
-        start: new Date(plan.planned_start),
-        end: new Date(plan.planned_end),
-        resource: plan
-      }));
+      .map(plan => {
+        const rejected = isRejected(plan);
+        const conflict = hasConflict(plan);
+        const approved = isApproved(plan);
+        const prefix = rejected ? '✕ [REJECTED] ' : conflict ? '⚠ [CONFLICT] ' : approved ? '✓ ' : '⏳ ';
+        return {
+          title: `${prefix}${plan.section || 'Railway Block'} (${plan.from_km}-${plan.to_km} km)`,
+          start: new Date(plan.planned_start),
+          end: new Date(plan.planned_end),
+          resource: plan,
+          hasConflict: conflict,
+          isApproved: approved,
+          isRejected: rejected,
+        };
+      });
   }, [plans, filter]);
 
   const summary = useMemo(() => {
-    const approved = plans.filter(
-      p => String(p.status || '').toUpperCase() === 'APPROVED'
-    ).length;
-
-    const pending = plans.filter(p => {
-      const status = String(p.status || '').toUpperCase();
-      return status === 'PENDING' || status === 'PLANNED';
-    }).length;
-
-    const conflicts = plans.filter(p => {
-      const status = String(p.status || '').toUpperCase();
-      return status === 'CONFLICT' || status === 'REJECTED';
-    }).length;
-
     const departments = new Set(
-      plans.map(p => p.trains?.find(item => item.task)?.task?.department).filter(Boolean)
+      plans.flatMap(p => (p.trains || []).map(item => item.task?.department)).filter(Boolean)
     );
 
     return {
-      total: plans.length,
-      approved,
-      pending,
-      conflicts,
+      total: counts.total,
+      approved: counts.approved,
+      pending: counts.pending,
+      conflicts: counts.conflict,
+      rejected: counts.rejected,
       departments: departments.size
     };
-  }, [plans]);
+  }, [plans, counts]);
 
   const eventPropGetter = event => {
-    const status = String(event.resource?.status || '').toUpperCase();
-    let background = '#176b87';
+    let background = '#d18b2e'; // amber for pending/proposed
+    let border = '1px solid #b4721f';
+    let opacity = 1;
 
-    if (status === 'APPROVED') {background = '#2d8a61';}
-    if (status === 'PENDING' || status === 'PLANNED') {background = '#d18b2e';}
-    if (status === 'REJECTED' || status === 'CONFLICT') {background = '#c14e4e';}
+    if (event.isRejected) {
+      background = '#4a5568'; // slate / muted for rejected
+      border = '1px dashed #718096';
+      opacity = 0.85;
+    } else if (event.hasConflict) {
+      background = '#c14e4e'; // red for conflict
+      border = '1px solid #9e3636';
+    } else if (event.isApproved) {
+      background = '#2d8a61'; // green for approved
+      border = '1px solid #206d4b';
+    }
 
     return {
       style: {
         backgroundColor: background,
+        border,
+        opacity,
         borderRadius: '6px',
-        border: 'none',
         color: '#fff',
         fontWeight: 700,
-        padding: '4px 7px',
-        boxShadow: '0 2px 6px rgba(16,42,67,.12)'
+        padding: '4px 8px',
+        boxShadow: '0 2px 6px rgba(16,42,67,.12)',
+        fontSize: '11px',
+        lineHeight: 1.3
       }
     };
   };
@@ -176,10 +226,35 @@ export default function BlockCalendar() {
         <div className="calendar-filter-group">
           <span className="eyebrow">BLOCK STATUS</span>
           <div className="calendar-filters">
-            {['ALL', 'APPROVED', 'PENDING', 'CONFLICT'].map(option => (
-              <button key={option} className={filter === option ? 'filter active' : 'filter'} onClick={() => setFilter(option)}>
+            {[
+              { key: 'ALL', label: 'All blocks', count: counts.total },
+              { key: 'APPROVED', label: 'Approved', count: counts.approved },
+              { key: 'PENDING', label: 'Pending', count: counts.pending },
+              { key: 'CONFLICT', label: 'Conflict', count: counts.conflict },
+              { key: 'REJECTED', label: 'Rejected', count: counts.rejected }
+            ].map(option => (
+              <button
+                key={option.key}
+                type="button"
+                className={filter === option.key ? 'filter active' : 'filter'}
+                onClick={() => setFilter(option.key)}
+              >
                 <i className="filter-indicator" />
-                {option === 'ALL' ? 'All blocks' : option === 'PENDING' ? 'Pending' : option.charAt(0) + option.slice(1).toLowerCase()}
+                <span>{option.label}</span>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    marginLeft: '4px',
+                    padding: '2px 6px',
+                    borderRadius: '10px',
+                    fontSize: '10px',
+                    fontWeight: 800,
+                    background: filter === option.key ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)',
+                    color: filter === option.key ? '#fff' : 'inherit'
+                  }}
+                >
+                  {option.count}
+                </span>
               </button>
             ))}
           </div>
@@ -189,6 +264,7 @@ export default function BlockCalendar() {
           <span><i className="legend-dot approved" />Approved</span>
           <span><i className="legend-dot pending" />Pending</span>
           <span><i className="legend-dot conflict" />Conflict</span>
+          <span><i className="legend-dot rejected" style={{ background: '#4a5568', width: '8px', height: '8px', borderRadius: '50%', display: 'inline-block' }} />Rejected</span>
         </div>
       </div>
 
@@ -224,6 +300,8 @@ export default function BlockCalendar() {
               events={events}
               view={view}
               onView={setView}
+              date={date}
+              onNavigate={setDate}
               startAccessor="start"
               endAccessor="end"
               eventPropGetter={eventPropGetter}
@@ -262,9 +340,95 @@ export default function BlockCalendar() {
                   <h2>{selected.section || 'Railway block'}</h2>
                   <p className="muted">Operational maintenance window</p>
                 </div>
-                <StatusBadge status={selected.status} />
+                <StatusBadge status={selected.status} hasConflict={hasConflict(selected)} isRejected={isRejected(selected)} />
               </div>
             </div>
+
+            {isRejected(selected) && (
+              <div className="detail-section" style={{
+                background: 'rgba(239, 68, 68, 0.06)',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                borderRadius: '8px',
+                padding: '14px',
+                marginTop: '10px'
+              }}>
+                <span className="eyebrow" style={{ color: '#b91c1c' }}>✕ ADMINISTRATIVE REJECTION</span>
+                <p style={{ margin: '6px 0 0', fontSize: '12px', fontWeight: 600, color: '#7f1d1d' }}>
+                  {selected.conflict_flags?.rejection_reason || 'This operational block was rejected by the Control Office.'}
+                </p>
+                {selected.conflict_flags?.rejected_by && (
+                  <small style={{ display: 'block', marginTop: '4px', color: '#991b1b', fontSize: '10px' }}>
+                    Actioned by: {selected.conflict_flags.rejected_by}
+                  </small>
+                )}
+
+                {selected.conflict_flags?.ai_suggestion && (
+                  <div style={{
+                    marginTop: '12px',
+                    padding: '10px 12px',
+                    borderRadius: '6px',
+                    background: '#ffffff',
+                    border: '1px solid #fed7aa',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: '#c2410c' }}>
+                        ⚡ AI SUGGESTED ALTERNATIVE SLOT
+                      </span>
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: '#15803d', background: '#dcfce7', padding: '2px 6px', borderRadius: '4px' }}>
+                        {selected.conflict_flags.ai_suggestion.confidence_score}% FEASIBILITY
+                      </span>
+                    </div>
+
+                    <strong style={{ display: 'block', fontSize: '13px', color: '#9a3412', marginTop: '6px' }}>
+                      {selected.conflict_flags.ai_suggestion.slot_label}
+                    </strong>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '8px', fontSize: '11px' }}>
+                      <div style={{ background: '#f8fafc', padding: '6px 8px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                        <small style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>PROPOSED START</small>
+                        <span style={{ fontWeight: 600, color: '#1e293b' }}>
+                          {new Date(selected.conflict_flags.ai_suggestion.recommended_start).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <div style={{ background: '#f8fafc', padding: '6px 8px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                        <small style={{ color: '#64748b', display: 'block', fontSize: '9px' }}>PROPOSED END</small>
+                        <span style={{ fontWeight: 600, color: '#1e293b' }}>
+                          {new Date(selected.conflict_flags.ai_suggestion.recommended_end).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#475569', lineHeight: 1.4 }}>
+                      💡 <em>{selected.conflict_flags.ai_suggestion.reasoning}</em>
+                    </p>
+
+                    {canReview && (
+                      <button
+                        type="button"
+                        style={{
+                          marginTop: '10px',
+                          width: '100%',
+                          padding: '7px 10px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          borderRadius: '5px',
+                          border: 'none',
+                          background: '#ea580c',
+                          color: '#fff',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => {
+                          alert(`Reschedule request queued for ${selected.conflict_flags.ai_suggestion.slot_label}`);
+                        }}
+                      >
+                        Adopt AI Suggested Window
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="detail-time-card">
               <span>PLANNED WINDOW</span>
@@ -280,6 +444,35 @@ export default function BlockCalendar() {
                 </div>
               </div>
             </div>
+
+            {hasConflict(selected) && (
+              <div className="detail-section" style={{
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                borderRadius: '8px',
+                padding: '12px 14px',
+                marginTop: '12px'
+              }}>
+                <span className="eyebrow" style={{ color: '#b91c1c' }}>⚠ ACTIVE CONFLICTS ({selected.conflicts?.length || 1})</span>
+                {Array.isArray(selected.conflicts) && selected.conflicts.length > 0 ? (
+                  selected.conflicts.map((c, i) => (
+                    <div key={c.id || i} style={{ marginTop: '8px', borderBottom: i < selected.conflicts.length - 1 ? '1px dashed #fca5a5' : 'none', paddingBottom: '6px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <strong style={{ fontSize: '12px', color: '#991b1b', textTransform: 'uppercase' }}>{c.conflict_type} conflict</strong>
+                        <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: '#fee2e2', color: '#991b1b', fontWeight: 700 }}>
+                          {String(c.severity || 'MEDIUM').toUpperCase()}
+                        </span>
+                      </div>
+                      <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#7f1d1d' }}>{c.description}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#7f1d1d' }}>
+                    Corridor overlap detected on {selected.section} during planned maintenance window.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="detail-section">
               <span className="eyebrow">OPERATIONAL IMPACT</span>
