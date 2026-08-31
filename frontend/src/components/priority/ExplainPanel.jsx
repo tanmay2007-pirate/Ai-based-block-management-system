@@ -1,24 +1,24 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 
 function scoreValue(data) {
   return Number(
+    data?.task?.priority_score ??
     data?.priority_score ??
     data?.priorityScore ??
-    data?.score ??
     data?.explanation?.score?.result?.priority_score ??
     data?.explanation?.score?.priority_score ??
     data?.explanation?.result?.priority_score ??
-    data?.task?.priority_score ??
+    data?.score ??
     0
   );
 }
 
 function getPriority(score) {
-  if (score >= 80) {return 'CRITICAL';}
-  if (score >= 50) {return 'HIGH';}
-  return 'MEDIUM';
+  if (score >= 60) {return 'CRITICAL';}
+  if (score >= 40) {return 'MEDIUM';}
+  return 'LOW';
 }
 
 function Metric({ label, value, description }) {
