@@ -2417,11 +2417,11 @@ header {
   gap: 20px;
   padding: 0 32px;
   margin: 0;
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(220, 233, 242, 0.85);
-  box-shadow: 0 4px 20px rgba(16, 42, 67, 0.05);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border-bottom: 1px solid rgba(210, 225, 236, 0.85);
+  box-shadow: 0 4px 24px rgba(16, 42, 67, 0.06);
   box-sizing: border-box;
   flex-shrink: 0;
 }
@@ -2433,15 +2433,15 @@ header::before {
   left: 0;
   top: 0;
   width: 100%;
-  height: 3px;
+  height: 3.5px;
   background: linear-gradient(
     90deg,
-    rgba(201, 122, 33, 0.85) 0%,
-    rgba(201, 122, 33, 0.85) 33%,
-    rgba(40, 112, 153, 0.65) 33%,
-    rgba(40, 112, 153, 0.65) 66%,
-    rgba(43, 137, 95, 0.8) 66%,
-    rgba(43, 137, 95, 0.8) 100%
+    #ea580c 0%,
+    #ea580c 33%,
+    #2563eb 33%,
+    #2563eb 66%,
+    #16a34a 66%,
+    #16a34a 100%
   );
 }
 
@@ -2456,33 +2456,39 @@ header::before {
   align-items: center;
   gap: 12px;
   text-decoration: none;
-  font-weight: 800;
-  font-size: 16px;
+  font-weight: 850;
+  font-size: 16.5px;
   color: var(--navy);
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
+  transition: transform 0.2s ease;
+}
+
+.navbar-logo:hover {
+  transform: translateY(-1px);
 }
 
 .navbar-logo span {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
-  background: linear-gradient(135deg, #e3a23b 0%, #c97a21 100%);
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: #ffffff;
   font-weight: 900;
-  font-size: 15px;
-  border-radius: 9px;
-  box-shadow: 0 4px 12px rgba(227, 162, 59, 0.28);
+  font-size: 16px;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.32);
+  letter-spacing: -0.5px;
 }
 
 .navbar-logo small {
   display: block;
   font-size: 10.5px;
   line-height: 1.2;
-  color: #628395;
-  font-weight: 700;
-  letter-spacing: 0.8px;
+  color: #64748b;
+  font-weight: 750;
+  letter-spacing: 0.9px;
   text-transform: uppercase;
   margin-top: 1px;
 }
@@ -2491,38 +2497,41 @@ header::before {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(240, 246, 250, 0.75);
+  background: rgba(241, 245, 249, 0.85);
   padding: 5px 8px;
-  border-radius: 12px;
-  border: 1px solid rgba(220, 233, 242, 0.7);
+  border-radius: 14px;
+  border: 1.5px solid rgba(226, 232, 240, 0.9);
   box-sizing: border-box;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
 .navbar-nav a {
   position: relative;
-  color: #486581;
+  color: #475569;
   text-decoration: none;
   padding: 8px 16px;
-  border-radius: 9px;
+  border-radius: 10px;
   font-size: 13.5px;
-  font-weight: 700;
+  font-weight: 750;
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
 }
 
 .navbar-nav a:hover {
   color: var(--navy);
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 2px 8px rgba(16, 42, 67, 0.06);
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(16, 42, 67, 0.08);
+  transform: translateY(-1px);
 }
 
 .navbar-nav a.active {
   color: #ffffff;
   background: var(--navy);
-  box-shadow: 0 3px 12px rgba(16, 42, 67, 0.2);
+  box-shadow: 0 4px 14px rgba(16, 42, 67, 0.25);
+  font-weight: 800;
 }
 
 .navbar-user {
@@ -2535,17 +2544,18 @@ header::before {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 5px 6px 5px 6px;
-  background: linear-gradient(145deg, #ffffff 0%, #f4f8fb 100%);
-  border: 1px solid #d8e5ec;
+  padding: 5px 6px;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  border: 1.5px solid #e2e8f0;
   border-radius: 999px;
   box-shadow: 0 3px 12px rgba(16, 42, 67, 0.06);
   transition: all 0.22s ease;
 }
 
 .user-profile-capsule:hover {
-  border-color: #cbdbe3;
-  box-shadow: 0 6px 18px rgba(16, 42, 67, 0.1);
+  border-color: #cbd5e1;
+  box-shadow: 0 6px 18px rgba(16, 42, 67, 0.12);
+  transform: translateY(-1px);
 }
 
 .user-avatar-badge {
@@ -2576,13 +2586,13 @@ header::before {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #16a34a;
   border: 2px solid #ffffff;
-  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
-  animation: liveStatusPulse 2.5s infinite ease-in-out;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25);
+  animation: liveStatusPulse 2.2s infinite ease-in-out;
 }
 
 .user-info-group {
@@ -2595,7 +2605,7 @@ header::before {
 .user-role-tag {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-size: 12.5px;
   font-weight: 800;
   color: var(--navy);
@@ -2605,17 +2615,18 @@ header::before {
 }
 
 .role-dot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
   flex-shrink: 0;
 }
 
 .user-name-label {
   font-size: 11px;
-  font-weight: 600;
-  color: #628395;
+  font-weight: 650;
+  color: #64748b;
   line-height: 1.2;
   margin-top: 1px;
   white-space: nowrap;
@@ -2627,7 +2638,7 @@ header::before {
 .user-divider {
   width: 1px;
   height: 24px;
-  background: #dce7ee;
+  background: #e2e8f0;
   margin: 0 2px;
 }
 
@@ -2639,13 +2650,13 @@ header::before {
   padding: 0 14px;
   border-radius: 999px;
   background: #ffffff;
-  color: #486581;
-  border: 1px solid #d4e2ea;
+  color: #475569;
+  border: 1px solid #e2e8f0;
   font-size: 12px;
   font-weight: 750;
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(16, 42, 67, 0.04);
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
 }
 
@@ -2653,7 +2664,7 @@ header::before {
   width: 14px;
   height: 14px;
   transition: transform 0.2s ease;
-  color: #78909d;
+  color: #64748b;
 }
 
 .signout-button:hover {
@@ -2695,12 +2706,13 @@ aside {
   top: 74px;
   height: calc(100vh - 74px);
   overflow-y: auto;
-  background: linear-gradient(180deg, #102a43 0%, #0c2033 100%);
-  color: #d9e5ee;
+  background: linear-gradient(180deg, #0f1e31 0%, #071322 100%);
+  color: #e2e8f0;
   padding: 26px 20px 22px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
   box-sizing: border-box;
   z-index: 50;
 }
@@ -2713,14 +2725,15 @@ aside {
   font-size: 11px;
   font-weight: 850;
   letter-spacing: 1.5px;
-  color: #63b3ed;
+  color: #38bdf8;
   margin-bottom: 8px;
   display: block;
+  text-transform: uppercase;
 }
 
 .sidebar-details-header h2 {
-  font-size: 20px;
-  font-weight: 800;
+  font-size: 21px;
+  font-weight: 850;
   color: #ffffff;
   margin: 0 0 8px;
   line-height: 1.25;
@@ -2728,7 +2741,7 @@ aside {
 }
 
 .sidebar-details-header .planner-name {
-  color: #f6ad55;
+  color: #fbbf24;
 }
 
 .sidebar-subtitle {
@@ -2740,10 +2753,13 @@ aside {
 
 .sidebar-profile-card {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 14px;
   padding: 15px;
   margin-bottom: 22px;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .profile-badge-row {
@@ -2756,9 +2772,9 @@ aside {
 }
 
 .avatar-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #ffffff;
   font-weight: 850;
@@ -2766,20 +2782,21 @@ aside {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
 }
 
 .profile-badge-row strong {
   display: block;
-  font-size: 14px;
+  font-size: 14.5px;
   color: #ffffff;
-  font-weight: 750;
+  font-weight: 800;
 }
 
 .profile-badge-row .role-pill {
   display: inline-block;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 750;
   color: #93c5fd;
   text-transform: capitalize;
 }
@@ -2800,9 +2817,10 @@ aside {
 
 .profile-meta strong {
   display: block;
-  font-size: 12px;
-  color: #f1f5f9;
+  font-size: 12.5px;
+  color: #f8fafc;
   margin-top: 2px;
+  font-weight: 750;
 }
 
 .sidebar-status-section {
@@ -2813,10 +2831,11 @@ aside {
 .sidebar-status-section .section-label {
   display: block;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 850;
   letter-spacing: 1.2px;
   color: #94a3b8;
   margin-bottom: 10px;
+  text-transform: uppercase;
 }
 
 .sidebar-status-card {
@@ -2830,16 +2849,35 @@ aside {
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 11px;
+  transition: all 0.2s ease;
+}
+
+.status-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot.green {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+  animation: liveStatusPulse 2s infinite ease-in-out;
 }
 
 .status-item strong {
   display: block;
   font-size: 12.5px;
-  font-weight: 750;
-  color: #f1f5f9;
+  font-weight: 800;
+  color: #f8fafc;
 }
 
 .status-item small {
@@ -2853,7 +2891,7 @@ aside {
   margin-top: auto;
   padding: 14px 10px 4px;
   font-size: 11.5px;
-  color: #91adbf;
+  color: #94a3b8;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -3165,6 +3203,34 @@ main {
   margin-bottom: 8px;
   letter-spacing: -0.8px;
   transition: color 0.22s ease;
+}
+
+.overview-stats .stat-card strong.orange,
+.stat-card strong.orange,
+.enhanced-stat strong.orange,
+strong.orange {
+  color: #ea580c !important;
+}
+
+.overview-stats .stat-card strong.green,
+.stat-card strong.green,
+.enhanced-stat strong.green,
+strong.green {
+  color: #16a34a !important;
+}
+
+.overview-stats .stat-card strong.red,
+.stat-card strong.red,
+.enhanced-stat strong.red,
+strong.red {
+  color: #dc2626 !important;
+}
+
+.overview-stats .stat-card strong.blue,
+.stat-card strong.blue,
+.enhanced-stat strong.blue,
+strong.blue {
+  color: #2563eb !important;
 }
 
 .overview-stats .stat-card small {
