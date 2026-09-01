@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // src/services/aiScore.js — Call Python AI service to score a task
 // Falls back gracefully if AI service is unavailable
 // ============================================================
@@ -15,9 +15,10 @@ async function postToAi(path, payload) {
     const response = await axios.post(`${AI_SERVICE_URL}${path}`, payload, { timeout: 10000 });
     return response.data;
   } catch (error) {
-    const message = error.response ? `AI service returned ${error.response.status}` : error.message;
-    const serviceError = new Error(`AI service unavailable: ${message}`);
-    serviceError.status = 503;
+    const detail = error.response?.data?.detail || error.response?.data?.message;
+    const message = detail || (error.response ? `AI service returned ${error.response.status}` : error.message);
+    const serviceError = new Error(message);
+    serviceError.status = error.response?.status || 503;
     throw serviceError;
   }
 }

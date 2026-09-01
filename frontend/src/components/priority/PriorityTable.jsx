@@ -304,7 +304,7 @@ export default function PriorityTable() {
 
           <strong>{summary.critical}</strong>
 
-          <small>Score ≥ 60 · Traffic & risk weighted</small>
+          <small>Immediate planning attention</small>
         </div>
 
         <div className="priority-kpi medium">
@@ -314,7 +314,7 @@ export default function PriorityTable() {
 
           <strong>{summary.medium}</strong>
 
-          <small>Score 40–59 · Standard window</small>
+          <small>Requires scheduled review</small>
         </div>
 
         <div className="priority-kpi low">
@@ -324,7 +324,7 @@ export default function PriorityTable() {
 
           <strong>{summary.low}</strong>
 
-          <small>Score &lt; 40 · Low operational impact</small>
+          <small>Monitor during planning</small>
         </div>
 
         <div className="priority-kpi total">
@@ -334,7 +334,7 @@ export default function PriorityTable() {
 
           <strong>{summary.total}</strong>
 
-          <small>Includes 150 field-reported critical defects</small>
+          <small>Maintenance workload</small>
         </div>
       </div>
 
