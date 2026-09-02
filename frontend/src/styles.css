@@ -2706,13 +2706,15 @@ aside {
   top: 74px;
   height: calc(100vh - 74px);
   overflow-y: auto;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
   color: #1e293b;
   padding: 26px 20px 22px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #e2e8f0;
-  box-shadow: 2px 0 16px rgba(16, 42, 67, 0.04);
+  border-right: 1px solid rgba(220, 233, 242, 0.85);
+  box-shadow: 4px 0 24px rgba(16, 42, 67, 0.05);
   box-sizing: border-box;
   z-index: 50;
 }
@@ -2752,12 +2754,14 @@ aside {
 }
 
 .sidebar-profile-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
   border-radius: 14px;
   padding: 15px;
   margin-bottom: 22px;
-  box-shadow: 0 3px 10px rgba(16, 42, 67, 0.04);
+  box-shadow: 0 4px 16px rgba(16, 42, 67, 0.04);
 }
 
 .profile-badge-row {
@@ -2766,7 +2770,7 @@ aside {
   gap: 12px;
   margin-bottom: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid rgba(241, 245, 249, 0.8);
 }
 
 .avatar-circle {
@@ -2811,10 +2815,10 @@ aside {
 }
 
 .profile-meta > div {
-  background: #f8fafc;
+  background: rgba(248, 250, 252, 0.7);
   padding: 8px 10px;
   border-radius: 8px;
-  border: 1px solid #edf2f7;
+  border: 1px solid rgba(237, 242, 247, 0.85);
 }
 
 .profile-meta span {
@@ -2860,18 +2864,20 @@ aside {
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
   border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(16, 42, 67, 0.03);
+  box-shadow: 0 2px 8px rgba(16, 42, 67, 0.03);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .status-item:hover {
   transform: translateY(-2px);
-  background: #ffffff;
-  border-color: #cbd5e1;
-  box-shadow: 0 6px 16px rgba(16, 42, 67, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(203, 213, 225, 0.95);
+  box-shadow: 0 6px 18px rgba(16, 42, 67, 0.08);
 }
 
 .status-dot {
@@ -2914,7 +2920,7 @@ aside {
   font-size: 11.5px;
   font-weight: 700;
   color: #16a34a;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
   display: flex;
   align-items: center;
   gap: 7px;
