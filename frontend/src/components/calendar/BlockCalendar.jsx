@@ -201,22 +201,22 @@ export default function BlockCalendar() {
 
       <div className="calendar-kpis">
         <div className="calendar-kpi">
-          <div className="calendar-kpi-top"><span>Total blocks</span><div className="calendar-kpi-icon">▦</div></div>
+          <div className="calendar-kpi-top"><span>Total blocks</span></div>
           <strong>{summary.total}</strong>
           <small>Scheduled operations</small>
         </div>
         <div className="calendar-kpi approved">
-          <div className="calendar-kpi-top"><span>Approved</span><div className="calendar-kpi-icon">✓</div></div>
+          <div className="calendar-kpi-top"><span>Approved</span></div>
           <strong>{summary.approved}</strong>
           <small>Ready for execution</small>
         </div>
         <div className="calendar-kpi pending">
-          <div className="calendar-kpi-top"><span>Pending review</span><div className="calendar-kpi-icon">!</div></div>
+          <div className="calendar-kpi-top"><span>Pending review</span></div>
           <strong>{summary.pending}</strong>
           <small>Require planning action</small>
         </div>
         <div className="calendar-kpi conflict">
-          <div className="calendar-kpi-top"><span>Conflicts</span><div className="calendar-kpi-icon">⚠</div></div>
+          <div className="calendar-kpi-top"><span>Conflicts</span></div>
           <strong>{summary.conflicts}</strong>
           <small>Require resolution</small>
         </div>
@@ -241,18 +241,7 @@ export default function BlockCalendar() {
               >
                 <i className="filter-indicator" />
                 <span>{option.label}</span>
-                <span
-                  style={{
-                    display: 'inline-block',
-                    marginLeft: '4px',
-                    padding: '2px 6px',
-                    borderRadius: '10px',
-                    fontSize: '10px',
-                    fontWeight: 800,
-                    background: filter === option.key ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)',
-                    color: filter === option.key ? '#fff' : 'inherit'
-                  }}
-                >
+                <span className="filter-count-badge">
                   {option.count}
                 </span>
               </button>
@@ -264,7 +253,7 @@ export default function BlockCalendar() {
           <span><i className="legend-dot approved" />Approved</span>
           <span><i className="legend-dot pending" />Pending</span>
           <span><i className="legend-dot conflict" />Conflict</span>
-          <span><i className="legend-dot rejected" style={{ background: '#4a5568', width: '8px', height: '8px', borderRadius: '50%', display: 'inline-block' }} />Rejected</span>
+          <span><i className="legend-dot rejected" />Rejected</span>
         </div>
       </div>
 

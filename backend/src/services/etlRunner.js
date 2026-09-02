@@ -359,6 +359,7 @@ function buildSyntheticData({ days = 30, seed = 42 } = {}) {
 }
 
 async function generateSyntheticBlockPlans({ days = 30, seed = 42 } = {}) {
+  const { randomUUID } = require('crypto');
   const tasks = await prisma.maintenanceTask.findMany({
     where: { is_deleted: false },
     orderBy: { priority_score: 'desc' },
@@ -387,8 +388,10 @@ async function generateSyntheticBlockPlans({ days = 30, seed = 42 } = {}) {
   const baseDate = new Date();
   baseDate.setUTCHours(0, 0, 0, 0);
 
-  let blockDemandCount = 0;
-  let blockPlanCount = 0;
+  const demandsToCreate = [];
+  const plansToCreate = [];
+  const trainsToCreate = [];
+  const conflictsToCreate = [];
 
   for (let dayOffset = 0; dayOffset < Math.min(days, 14); dayOffset += 1) {
     const dayStart = new Date(baseDate);
@@ -409,19 +412,18 @@ async function generateSyntheticBlockPlans({ days = 30, seed = 42 } = {}) {
       weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
       weekEnd.setUTCHours(23, 59, 59, 999);
 
-      const demand = await prisma.blockDemand.create({
-        data: {
-          section,
-          from_km: fromKm,
-          to_km: toKm,
-          demanded_by: 'control-office',
-          demanded_for: start,
-          duration_hours: (end.getTime() - start.getTime()) / 3600000,
-          reason: `${section} maintenance corridor window`,
-          status: 'pending',
-        },
+      const demandId = randomUUID();
+      demandsToCreate.push({
+        id: demandId,
+        section,
+        from_km: fromKm,
+        to_km: toKm,
+        demanded_by: 'control-office',
+        demanded_for: start,
+        duration_hours: (end.getTime() - start.getTime()) / 3600000,
+        reason: `${section} maintenance corridor window`,
+        status: 'pending',
       });
-      blockDemandCount += 1;
 
       const chosenTasks = [];
       for (let offset = 0; offset < 3; offset += 1) {
@@ -433,48 +435,56 @@ async function generateSyntheticBlockPlans({ days = 30, seed = 42 } = {}) {
       }
 
       const status = (dayOffset + slot + seed) % 3 === 0 ? 'approved' : 'pending';
-      const plan = await prisma.blockPlan.create({
-        data: {
-          section,
-          from_km: fromKm,
-          to_km: toKm,
-          planned_start: start,
-          planned_end: end,
-          week_start: weekStart,
-          week_end: weekEnd,
-          status,
-          block_demand_id: demand.id,
-          conflict_flags: {
-            source: 'synthetic-plan-generator',
-            corridor: section,
-            capacity_score: 72 + ((dayOffset + slot + seed) % 20),
-          },
-          trains: {
-            create: chosenTasks.map((task) => ({
-              task_id: task.id,
-              train_number: `PLAN-${String((dayOffset + slot + 1) * 10 + seed).padStart(4, '0')}`,
-              impact_type: task.department === 'TDMS' ? 'traction' : task.department === 'SMMS' ? 'signalling' : 'track',
-              notes: `${task.task_type} work window`,
-            })),
-          },
+      const planId = randomUUID();
+      plansToCreate.push({
+        id: planId,
+        section,
+        from_km: fromKm,
+        to_km: toKm,
+        planned_start: start,
+        planned_end: end,
+        week_start: weekStart,
+        week_end: weekEnd,
+        status,
+        block_demand_id: demandId,
+        conflict_flags: {
+          source: 'synthetic-plan-generator',
+          corridor: section,
+          capacity_score: 72 + ((dayOffset + slot + seed) % 20),
         },
       });
-      blockPlanCount += 1;
+
+      chosenTasks.forEach((task) => {
+        trainsToCreate.push({
+          id: randomUUID(),
+          block_plan_id: planId,
+          task_id: task.id,
+          train_number: `PLAN-${String((dayOffset + slot + 1) * 10 + seed).padStart(4, '0')}`,
+          impact_type: task.department === 'TDMS' ? 'traction' : task.department === 'SMMS' ? 'signalling' : 'track',
+          notes: `${task.task_type} work window`,
+        });
+      });
 
       if ((dayOffset + slot + seed) % 4 === 0) {
-        await prisma.conflict.create({
-          data: {
-            block_plan_id: plan.id,
-            conflict_type: 'capacity',
-            description: `${section} corridor overlap during maintenance window`,
-            severity: 'medium',
-          },
+        conflictsToCreate.push({
+          id: randomUUID(),
+          block_plan_id: planId,
+          conflict_type: 'capacity',
+          description: `${section} corridor overlap during maintenance window`,
+          severity: 'medium',
         });
       }
     }
   }
 
-  return { block_demands: blockDemandCount, block_plans: blockPlanCount };
+  await prisma.blockDemand.createMany({ data: demandsToCreate, skipDuplicates: true });
+  await prisma.blockPlan.createMany({ data: plansToCreate, skipDuplicates: true });
+  await prisma.blockPlanTrain.createMany({ data: trainsToCreate, skipDuplicates: true });
+  if (conflictsToCreate.length) {
+    await prisma.conflict.createMany({ data: conflictsToCreate, skipDuplicates: true });
+  }
+
+  return { block_demands: demandsToCreate.length, block_plans: plansToCreate.length };
 }
 
 let etlRunPromise = null;
@@ -532,187 +542,206 @@ async function runEtlLoader() {
       console.log('[ETL] Tables cleared successfully.');
 
       console.log(`[ETL] Loading ${assets.length} core assets...`);
-      for (const item of assets) {
-        await prisma.asset.create({
-          data: {
-            id: item.asset_id || item.id,
-            asset_code: item.asset_code || `${item.asset_type.slice(0, 3).toUpperCase()}-${item.zone}-${(item.asset_id || item.id).slice(0, 8)}`,
-            department: item.department,
-            asset_type: item.asset_type,
-            name: item.name || `${item.asset_type} asset at ${item.station_location}`,
-            asset_specification: item.asset_specification,
-            zone: item.zone,
-            division: item.division,
-            section: item.section,
-            station_location: item.station_location,
-            location_km: item.location_km,
-            gauge: item.gauge,
-            manufacturer: item.manufacturer,
-            installation_date: item.installation_date ? new Date(item.installation_date) : null,
-            design_life_years: item.design_life_years,
-            last_major_maintenance_date: item.last_major_maintenance_date ? new Date(item.last_major_maintenance_date) : null,
-            last_inspection_date: item.last_inspection_date ? new Date(item.last_inspection_date) : null,
-            criticality: item.criticality,
-            condition_score: item.condition_score,
-            traffic_level: item.traffic_level,
-            total_past_defects: item.total_past_defects,
-            total_past_failures: item.total_past_failures,
-            status: item.current_status || item.status || 'active',
-            replacement_cost_estimate: item.replacement_cost_estimate,
-          },
-        });
-      }
+      await prisma.asset.createMany({
+        data: assets.map(item => ({
+          id: item.asset_id || item.id,
+          asset_code: item.asset_code || `${item.asset_type.slice(0, 3).toUpperCase()}-${item.zone}-${(item.asset_id || item.id).slice(0, 8)}`,
+          department: item.department,
+          asset_type: item.asset_type,
+          name: item.name || `${item.asset_type} asset at ${item.station_location}`,
+          asset_specification: item.asset_specification,
+          zone: item.zone,
+          division: item.division,
+          section: item.section,
+          station_location: item.station_location,
+          location_km: item.location_km,
+          gauge: item.gauge,
+          manufacturer: item.manufacturer,
+          installation_date: item.installation_date ? new Date(item.installation_date) : null,
+          design_life_years: item.design_life_years,
+          last_major_maintenance_date: item.last_major_maintenance_date ? new Date(item.last_major_maintenance_date) : null,
+          last_inspection_date: item.last_inspection_date ? new Date(item.last_inspection_date) : null,
+          criticality: item.criticality,
+          condition_score: item.condition_score,
+          traffic_level: item.traffic_level,
+          total_past_defects: item.total_past_defects,
+          total_past_failures: item.total_past_failures,
+          status: item.current_status || item.status || 'active',
+          replacement_cost_estimate: item.replacement_cost_estimate,
+        })),
+        skipDuplicates: true,
+      });
 
       console.log(`[ETL] Loading ${tmsData.length} track defects...`);
-      for (const item of tmsData) {
-        await prisma.trackMaintenance.create({
-          data: {
-            id: item.id,
-            asset_id: item.asset_id,
-            asset_type: item.asset_type,
-            location_km: item.location_km,
-            defect_type: item.defect_type,
-            severity: item.severity,
-            description: item.description,
-            reported_by: item.reported_by,
-            reported_at: new Date(item.reported_at),
-            is_deleted: item.is_deleted,
-            created_by: item.created_by,
-            created_at: new Date(item.created_at),
-            updated_at: new Date(item.updated_at),
-            criticality: item.criticality,
-            overdue_days: item.overdue_days,
-            preferred_start_time: item.preferred_start_time ? new Date(item.preferred_start_time) : null,
-            preferred_end_time: item.preferred_end_time ? new Date(item.preferred_end_time) : null,
-            crew_size: item.crew_size,
-          },
-        });
-      }
+      await prisma.trackMaintenance.createMany({
+        data: tmsData.map(item => ({
+          id: item.id,
+          asset_id: item.asset_id,
+          asset_type: item.asset_type,
+          location_km: item.location_km,
+          defect_type: item.defect_type,
+          severity: item.severity,
+          description: item.description,
+          reported_by: item.reported_by,
+          reported_at: new Date(item.reported_at),
+          is_deleted: item.is_deleted,
+          created_by: item.created_by,
+          created_at: new Date(item.created_at),
+          updated_at: new Date(item.updated_at),
+          criticality: item.criticality,
+          overdue_days: item.overdue_days,
+          preferred_start_time: item.preferred_start_time ? new Date(item.preferred_start_time) : null,
+          preferred_end_time: item.preferred_end_time ? new Date(item.preferred_end_time) : null,
+          crew_size: item.crew_size,
+        })),
+        skipDuplicates: true,
+      });
 
       console.log(`[ETL] Loading ${tdmsData.length} traction defects...`);
-      for (const item of tdmsData) {
-        await prisma.tractionMaintenance.create({
-          data: {
-            id: item.id,
-            asset_id: item.asset_id,
-            loco_number: item.loco_number,
-            loco_type: item.loco_type,
-            defect_type: item.defect_type,
-            severity: item.severity,
-            description: item.description,
-            depot: item.depot,
-            reported_by: item.reported_by,
-            reported_at: new Date(item.reported_at),
-            is_deleted: item.is_deleted,
-            created_by: item.created_by,
-            created_at: new Date(item.created_at),
-            updated_at: new Date(item.updated_at),
-            criticality: item.criticality,
-            overdue_days: item.overdue_days,
-            preferred_start_time: item.preferred_start_time ? new Date(item.preferred_start_time) : null,
-            preferred_end_time: item.preferred_end_time ? new Date(item.preferred_end_time) : null,
-            crew_size: item.crew_size,
-          },
-        });
-      }
+      await prisma.tractionMaintenance.createMany({
+        data: tdmsData.map(item => ({
+          id: item.id,
+          asset_id: item.asset_id,
+          loco_number: item.loco_number,
+          loco_type: item.loco_type,
+          defect_type: item.defect_type,
+          severity: item.severity,
+          description: item.description,
+          depot: item.depot,
+          reported_by: item.reported_by,
+          reported_at: new Date(item.reported_at),
+          is_deleted: item.is_deleted,
+          created_by: item.created_by,
+          created_at: new Date(item.created_at),
+          updated_at: new Date(item.updated_at),
+          criticality: item.criticality,
+          overdue_days: item.overdue_days,
+          preferred_start_time: item.preferred_start_time ? new Date(item.preferred_start_time) : null,
+          preferred_end_time: item.preferred_end_time ? new Date(item.preferred_end_time) : null,
+          crew_size: item.crew_size,
+        })),
+        skipDuplicates: true,
+      });
 
       console.log(`[ETL] Loading ${smmsData.length} signal defects...`);
-      for (const item of smmsData) {
-        await prisma.signallingMaintenance.create({
-          data: {
-            id: item.id,
-            asset_id: item.asset_id,
-            signal_id: item.signal_id,
-            signal_type: item.signal_type,
-            location_km: item.location_km,
-            defect_type: item.defect_type,
-            severity: item.severity,
-            description: item.description,
-            reported_by: item.reported_by,
-            reported_at: new Date(item.reported_at),
-            is_deleted: item.is_deleted,
-            created_by: item.created_by,
-            created_at: new Date(item.created_at),
-            updated_at: new Date(item.updated_at),
-            criticality: item.criticality,
-            overdue_days: item.overdue_days,
-            preferred_start_time: item.preferred_start_time ? new Date(item.preferred_start_time) : null,
-            preferred_end_time: item.preferred_end_time ? new Date(item.preferred_end_time) : null,
-            crew_size: item.crew_size,
-          },
-        });
-      }
+      await prisma.signallingMaintenance.createMany({
+        data: smmsData.map(item => ({
+          id: item.id,
+          asset_id: item.asset_id,
+          signal_id: item.signal_id,
+          signal_type: item.signal_type,
+          location_km: item.location_km,
+          defect_type: item.defect_type,
+          severity: item.severity,
+          description: item.description,
+          reported_by: item.reported_by,
+          reported_at: new Date(item.reported_at),
+          is_deleted: item.is_deleted,
+          created_by: item.created_by,
+          created_at: new Date(item.created_at),
+          updated_at: new Date(item.updated_at),
+          criticality: item.criticality,
+          overdue_days: item.overdue_days,
+          preferred_start_time: item.preferred_start_time ? new Date(item.preferred_start_time) : null,
+          preferred_end_time: item.preferred_end_time ? new Date(item.preferred_end_time) : null,
+          crew_size: item.crew_size,
+        })),
+        skipDuplicates: true,
+      });
 
       console.log(`[ETL] Loading ${coaData.length} train operations...`);
-      for (const item of coaData) {
-        await prisma.trainOperations.create({
-          data: {
-            id: item.id,
-            train_number: item.train_number,
-            from_station: item.from_station,
-            to_station: item.to_station,
-            departure_time: new Date(item.departure_time),
-            arrival_time: new Date(item.arrival_time),
-            status: item.status,
-            delay_minutes: item.delay_minutes,
-            section: item.section,
-            created_at: new Date(item.created_at),
-            updated_at: new Date(item.updated_at),
-          },
-        });
-      }
+      await prisma.trainOperations.createMany({
+        data: coaData.map(item => ({
+          id: item.id,
+          train_number: item.train_number,
+          from_station: item.from_station,
+          to_station: item.to_station,
+          departure_time: new Date(item.departure_time),
+          arrival_time: new Date(item.arrival_time),
+          status: item.status,
+          delay_minutes: item.delay_minutes,
+          section: item.section,
+          created_at: new Date(item.created_at),
+          updated_at: new Date(item.updated_at),
+        })),
+        skipDuplicates: true,
+      });
 
       console.log(`[ETL] Loading ${historyData.length} maintenance history records...`);
-      for (const item of historyData) {
-        await prisma.maintenanceHistory.create({
-          data: {
-            id: item.id,
-            task_id: item.task_id || null,
-            asset_id: item.asset_id,
-            division: item.division,
-            completed_date: item.completed_date ? new Date(item.completed_date) : null,
-            estimated_duration_min: item.estimated_duration_min,
-            actual_repair_duration_min: item.actual_repair_duration_min,
-            duration_variance_min: item.duration_variance_min,
-            was_delayed: item.was_delayed,
-            delay_reason: item.delay_reason,
-            did_fail_within_30_days: item.did_fail_within_30_days,
-            days_to_failure: item.days_to_failure,
-            crew_size_used: item.crew_size_used,
-            cost_incurred: item.cost_incurred,
-            weather_condition: item.weather_condition,
-            remarks: item.remarks,
-            action: item.action || 'completed',
-            old_status: item.old_status || 'pending',
-            new_status: item.new_status || 'completed',
-            notes: item.notes || null,
-            performed_by: item.performed_by || 'synthetic-data-generator',
-            created_at: item.created_at ? new Date(item.created_at) : new Date(),
-          },
+      await prisma.maintenanceHistory.createMany({
+        data: historyData.map(item => ({
+          id: item.id,
+          task_id: item.task_id || null,
+          asset_id: item.asset_id,
+          division: item.division,
+          completed_date: item.completed_date ? new Date(item.completed_date) : null,
+          estimated_duration_min: item.estimated_duration_min,
+          actual_repair_duration_min: item.actual_repair_duration_min,
+          duration_variance_min: item.duration_variance_min,
+          was_delayed: item.was_delayed,
+          delay_reason: item.delay_reason,
+          did_fail_within_30_days: item.did_fail_within_30_days,
+          days_to_failure: item.days_to_failure,
+          crew_size_used: item.crew_size_used,
+          cost_incurred: item.cost_incurred,
+          weather_condition: item.weather_condition,
+          remarks: item.remarks,
+          action: item.action || 'completed',
+          old_status: item.old_status || 'pending',
+          new_status: item.new_status || 'completed',
+          notes: item.notes || null,
+          performed_by: item.performed_by || 'synthetic-data-generator',
+          created_at: item.created_at ? new Date(item.created_at) : new Date(),
+        })),
+        skipDuplicates: true,
+      });
+
+      console.log('[ETL] Normalizing defects into planning.maintenance_tasks...');
+      const tasksToCreate = [
+        ...tmsData.map((r) => ({
+          source_system: 'tms',
+          source_id: r.id,
+          task_type: r.defect_type,
+          severity: r.severity,
+          description: r.description,
+          location: r.location_km ? `${r.location_km} km` : null,
+          department: 'TMS',
+          asset_id: r.asset_id,
+          priority_score: r.severity === 'critical' ? 90 : r.severity === 'high' ? 70 : 40,
+        })),
+        ...tdmsData.map((r) => ({
+          source_system: 'tdms',
+          source_id: r.id,
+          task_type: r.defect_type,
+          severity: r.severity,
+          description: r.description,
+          location: r.depot || null,
+          department: 'TDMS',
+          asset_id: r.asset_id,
+          priority_score: r.severity === 'critical' ? 90 : r.severity === 'high' ? 70 : 40,
+        })),
+        ...smmsData.map((r) => ({
+          source_system: 'smms',
+          source_id: r.id,
+          task_type: r.defect_type,
+          severity: r.severity,
+          description: r.description,
+          location: r.location_km ? `${r.location_km} km` : null,
+          department: 'SMMS',
+          asset_id: r.asset_id,
+          priority_score: r.severity === 'critical' ? 90 : r.severity === 'high' ? 70 : 40,
+        })),
+      ];
+
+      for (let i = 0; i < tasksToCreate.length; i += 100) {
+        await prisma.maintenanceTask.createMany({
+          data: tasksToCreate.slice(i, i + 100),
+          skipDuplicates: true,
         });
       }
 
-      console.log('[ETL] Normalizing defects into planning.maintenance_tasks...');
-      const [tmsRecords, tdmsRecords, smmsRecords] = await Promise.all([
-        prisma.trackMaintenance.findMany({ where: { is_deleted: false } }),
-        prisma.tractionMaintenance.findMany({ where: { is_deleted: false } }),
-        prisma.signallingMaintenance.findMany({ where: { is_deleted: false } }),
-      ]);
-
-      const results = await Promise.allSettled([
-        ...tmsRecords.map((record) => normalizeTmsDefect(record)),
-        ...tdmsRecords.map((record) => normalizeTdmsDefect(record)),
-        ...smmsRecords.map((record) => normalizeSmmsDefect(record)),
-      ]);
-
-      const succeeded = results.filter((result) => result.status === 'fulfilled').length;
-      const failed = results.filter((result) => result.status === 'rejected').length;
-      console.log(`[ETL] Normalization completed: ${succeeded} succeeded, ${failed} failed.`);
-
-      if (failed > 0) {
-        const firstFailure = results.find((result) => result.status === 'rejected');
-        throw firstFailure.reason;
-      }
+      const succeeded = tasksToCreate.length;
+      console.log(`[ETL] Normalization completed: ${succeeded} tasks inserted into planning.maintenance_tasks.`);
 
       console.log('[ETL] Scoring normalized maintenance tasks with AI service...');
       try {

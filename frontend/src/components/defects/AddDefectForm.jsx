@@ -44,13 +44,52 @@ export default function AddDefectForm({ onComplete }) {
     }
   };
 
-  return <form className="defect-form" onSubmit={submit}>
-    <div className="form-grid">{config.map(([name, label]) => <label key={name}>{label}
-      {name === 'severity' ? <select required={name !== 'description'} value={values[name] || ''} onChange={event => setValues({ ...values, [name]: event.target.value })}>
-        <option value="">Select severity</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option>
-      </select> : <input required={name !== 'description'} type={name === 'location_km' ? 'number' : 'text'} value={values[name] || ''} onChange={event => setValues({ ...values, [name]: event.target.value })} />}
-    </label>)}</div>
-    {error && <p className="error">{error}</p>}
-    <button className="primary" disabled={saving}>{saving ? 'Saving…' : 'Add defect'}</button>
-  </form>;
+  return (
+    <form className="defect-form" onSubmit={submit}>
+      <div className="form-grid">
+        {config.map(([name, label]) => (
+          <div className="form-field" key={name}>
+            <label htmlFor={`field-${name}`}>{label}</label>
+            {name === 'severity' ? (
+              <select
+                id={`field-${name}`}
+                required={name !== 'description'}
+                value={values[name] || ''}
+                onChange={event => setValues({ ...values, [name]: event.target.value })}
+              >
+                <option value="">Select severity</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            ) : name === 'description' ? (
+              <input
+                id={`field-${name}`}
+                placeholder="Enter description of defect"
+                type="text"
+                value={values[name] || ''}
+                onChange={event => setValues({ ...values, [name]: event.target.value })}
+              />
+            ) : (
+              <input
+                id={`field-${name}`}
+                required
+                placeholder={`Enter ${label.toLowerCase()}`}
+                type={name === 'location_km' ? 'number' : 'text'}
+                value={values[name] || ''}
+                onChange={event => setValues({ ...values, [name]: event.target.value })}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+      {error && <p className="form-error-msg">{error}</p>}
+      <div className="form-actions">
+        <button type="submit" className="defect-submit-btn" disabled={saving}>
+          {saving ? 'Saving defect…' : '＋ Add defect record'}
+        </button>
+      </div>
+    </form>
+  );
 }

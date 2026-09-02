@@ -299,8 +299,7 @@ export default function PriorityTable() {
       <div className="priority-kpis">
         <div className="priority-kpi critical">
           <div className="priority-kpi-top">
-            <span>Critical Priority</span>
-            <div>!</div>
+            <span>AI Urgent Priority</span>
           </div>
 
           <strong>{summary.critical}</strong>
@@ -310,8 +309,7 @@ export default function PriorityTable() {
 
         <div className="priority-kpi medium">
           <div className="priority-kpi-top">
-            <span>Medium Priority</span>
-            <div>↗</div>
+            <span>Scheduled Review</span>
           </div>
 
           <strong>{summary.medium}</strong>
@@ -321,8 +319,7 @@ export default function PriorityTable() {
 
         <div className="priority-kpi low">
           <div className="priority-kpi-top">
-            <span>Low Priority</span>
-            <div>✓</div>
+            <span>Routine Monitoring</span>
           </div>
 
           <strong>{summary.low}</strong>
@@ -332,8 +329,7 @@ export default function PriorityTable() {
 
         <div className="priority-kpi total">
           <div className="priority-kpi-top">
-            <span>Total Tasks</span>
-            <div>Σ</div>
+            <span>Total Backlog</span>
           </div>
 
           <strong>{summary.total}</strong>
@@ -443,7 +439,7 @@ export default function PriorityTable() {
                       </span>
                     </td>
 
-                    <td>
+                    <td className="priority-score-cell">
                       <PriorityBadge
                         score={task.priority_score}
                         hasBackendScore={Boolean(task.ai_score_data) || Number(task.priority_score) > 0}
@@ -460,7 +456,7 @@ export default function PriorityTable() {
                       <StatusBadge status={task.status} />
                     </td>
 
-                    <td>
+                    <td className="explain-action-cell">
                       <NavLink
                         className="explain-button"
                         to={`/priority-list/${task.id}/explain`}
@@ -495,55 +491,27 @@ export default function PriorityTable() {
         </div>
 
         {totalTasksInDb > pageSize && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '16px 20px',
-            borderTop: '1px solid #e2e8f0',
-            background: '#fafbfc',
-            borderRadius: '0 0 12px 12px',
-            flexWrap: 'wrap',
-            gap: '12px'
-          }}>
-            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 550 }}>
+          <div className="priority-pagination-bar">
+            <span className="priority-pagination-info">
               Showing {Math.min((page - 1) * pageSize + 1, totalTasksInDb)}–{Math.min(page * pageSize, totalTasksInDb)} of {totalTasksInDb} tasks (Page {page} of {totalPages})
             </span>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div className="priority-pagination-controls">
               <button
                 type="button"
+                className="priority-page-btn prev"
                 disabled={page <= 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  background: page <= 1 ? '#f1f5f9' : '#fff',
-                  color: page <= 1 ? '#94a3b8' : '#1e293b',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  cursor: page <= 1 ? 'not-allowed' : 'pointer'
-                }}
               >
                 ← Previous
               </button>
-              <span style={{ fontSize: '12px', fontWeight: 650, color: '#0f172a', padding: '0 6px' }}>
+              <span className="priority-page-indicator">
                 {page} / {totalPages}
               </span>
               <button
                 type="button"
+                className="priority-page-btn next"
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  background: page >= totalPages ? '#f1f5f9' : '#fff',
-                  color: page >= totalPages ? '#94a3b8' : '#1e293b',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  cursor: page >= totalPages ? 'not-allowed' : 'pointer'
-                }}
               >
                 Next →
               </button>
