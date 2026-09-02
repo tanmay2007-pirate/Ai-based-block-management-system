@@ -3001,9 +3001,72 @@ main {
   font-size: clamp(32px, 3vw, 42px);
   font-weight: 850;
   color: var(--navy);
-  margin: 0 0 14px;
+  margin: 0 0 12px;
   letter-spacing: -0.8px;
   line-height: 1.15;
+}
+
+/* Indian Tricolour Animated Loading Line */
+.tricolour-loader-container {
+  position: relative;
+  width: 220px;
+  height: 4.5px;
+  border-radius: 999px;
+  margin: 0 auto 18px;
+  overflow: hidden;
+  background: rgba(226, 232, 240, 0.7);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.tricolour-loader-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 103, 31, 0.25) 0%,
+    rgba(255, 153, 51, 0.25) 30%,
+    rgba(0, 0, 128, 0.15) 50%,
+    rgba(19, 136, 8, 0.25) 70%,
+    rgba(22, 163, 74, 0.25) 100%
+  );
+}
+
+.tricolour-loader-beam {
+  position: absolute;
+  top: 0;
+  left: -120px;
+  height: 100%;
+  width: 120px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #FF671F 22%,
+    #FF9933 38%,
+    #000080 48%,
+    #FFFFFF 50%,
+    #000080 52%,
+    #16a34a 62%,
+    #138808 78%,
+    transparent 100%
+  );
+  box-shadow: 0 0 10px rgba(255, 103, 31, 0.55), 0 0 10px rgba(19, 136, 8, 0.55);
+  animation: tricolourSlide 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes tricolourSlide {
+  0% {
+    left: -120px;
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0.6;
+  }
 }
 
 .overview-hero-copy p {

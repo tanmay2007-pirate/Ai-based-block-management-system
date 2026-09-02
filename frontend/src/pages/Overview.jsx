@@ -97,6 +97,10 @@ export default function Overview() {
         <div className="overview-hero-copy">
           <span className="eyebrow">RAILWAY OPERATIONS CONTROL</span>
           <h1 className="overview-hero-title">Network operations overview</h1>
+          <div className="tricolour-loader-container" aria-label="Indian Railway Tricolour Status Indicator">
+            <div className="tricolour-loader-track" />
+            <div className="tricolour-loader-beam" />
+          </div>
           <p>
             Monitor maintenance activity, railway blocks and operational risk
             from one intelligent planning workspace.
