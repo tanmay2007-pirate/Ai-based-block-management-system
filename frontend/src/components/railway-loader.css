@@ -12,8 +12,8 @@
   background:
     radial-gradient(
       circle at 50% 45%,
-      rgba(22, 91, 120, 0.18),
-      transparent 45%
+      rgba(22, 91, 120, 0.22),
+      transparent 55%
     ),
     #04121d;
 
@@ -52,43 +52,50 @@
   position: relative;
   z-index: 2;
 
-  width: min(720px, 86vw);
+  width: min(720px, 90vw);
 
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-/* BRAND */
+/* BRAND SEAL */
 
 .railway-loader-brand {
   display: flex;
   align-items: center;
   gap: 14px;
 
-  margin-bottom: 65px;
+  margin-bottom: 50px;
 }
 
 .railway-loader-mark {
-  width: 46px;
-  height: 46px;
+  width: 50px;
+  height: 50px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 50%;
-
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-
-  background: #0c2637;
+  background: radial-gradient(circle, #0a2542 0%, #051627 100%);
+  border: 1.5px solid rgba(255, 187, 51, 0.55);
 
   box-shadow:
-    0 0 0 4px rgba(255, 255, 255, 0.025),
-    0 0 25px rgba(45, 170, 205, 0.12);
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    0 0 16px rgba(255, 170, 30, 0.25);
+
+  overflow: hidden;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.loader-seal-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+  display: block;
 }
 
 .railway-loader-brand strong {
@@ -103,7 +110,7 @@
 
   margin-top: 5px;
 
-  font-size: 8px;
+  font-size: 8.5px;
   letter-spacing: 0.2em;
 
   color: rgba(170, 210, 222, 0.55);
@@ -115,13 +122,13 @@
   display: flex;
   align-items: center;
 
-  margin-bottom: 35px;
+  margin-bottom: 25px;
 
   font-family: monospace;
   font-size: 10px;
   letter-spacing: 0.18em;
 
-  color: rgba(180, 220, 230, 0.7);
+  color: rgba(180, 220, 230, 0.75);
 }
 
 .loader-status-dot {
@@ -134,7 +141,7 @@
 
   background: #f19a32;
 
-  box-shadow: 0 0 14px rgba(241, 154, 50, 0.8);
+  box-shadow: 0 0 14px rgba(241, 154, 50, 0.85);
 
   animation: loaderSignalPulse 1s infinite ease-in-out;
 }
@@ -148,262 +155,211 @@
   animation: loaderDots 1.2s steps(4, end) infinite;
 }
 
-/* TRACK */
+/* =========================================================
+   AUTHENTIC RAILWAY TRACK & HIGH-SPEED TRAINSET
+   ========================================================= */
 
-.railway-loader-track {
+.railway-loader-track-container {
   position: relative;
-
   width: 100%;
   height: 110px;
+  margin: 5px 0 20px;
+  overflow: visible;
 }
 
-.loader-rail {
-  position: absolute;
-
-  left: 0;
-  right: 0;
-
-  height: 3px;
-
-  border-radius: 3px;
-
-  background: linear-gradient(
-    90deg,
-    rgba(54, 174, 211, 0.15),
-    rgba(68, 196, 230, 0.9),
-    rgba(54, 174, 211, 0.15)
-  );
-
-  box-shadow:
-    0 0 8px rgba(51, 186, 221, 0.35);
+.railway-loader-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 
-.loader-rail-one {
-  top: 48px;
+/* Ballast Bed */
+.loader-ballast {
+  fill: rgba(8, 26, 42, 0.88);
+  stroke: rgba(45, 125, 160, 0.28);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
 }
 
-.loader-rail-two {
-  top: 66px;
+/* Sleepers / Ties */
+.loader-sleeper-tie {
+  fill: rgba(56, 115, 145, 0.45);
+  stroke: rgba(105, 205, 235, 0.3);
+  stroke-width: 1;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.35));
 }
 
-/* SLEEPERS */
-
-.loader-sleeper {
-  position: absolute;
-
-  top: 40px;
-
-  width: 7px;
-  height: 35px;
-
-  border-radius: 2px;
-
-  background: rgba(113, 151, 164, 0.32);
-
-  box-shadow:
-    0 0 6px rgba(70, 145, 165, 0.08);
+.loader-tie-plate {
+  fill: #0c1822;
+  stroke: #3a7590;
+  stroke-width: 0.5;
 }
 
-.sleeper-1 { left: 4%; }
-.sleeper-2 { left: 12%; }
-.sleeper-3 { left: 20%; }
-.sleeper-4 { left: 28%; }
-.sleeper-5 { left: 36%; }
-.sleeper-6 { left: 44%; }
-.sleeper-7 { left: 52%; }
-.sleeper-8 { left: 60%; }
-.sleeper-9 { left: 68%; }
-.sleeper-10 { left: 76%; }
-.sleeper-11 { left: 84%; }
-.sleeper-12 { left: 92%; }
-
-/* TRAIN */
-
-.loader-train {
-  position: absolute;
-
-  top: 27px;
-  left: -100px;
-
-  width: 86px;
-  height: 38px;
-
-  border-radius: 7px 12px 10px 7px;
-
-  background: linear-gradient(
-    180deg,
-    #edf5f7,
-    #9eb2bc
-  );
-
-  border: 1px solid rgba(255, 255, 255, 0.65);
-
-  box-shadow:
-    0 5px 18px rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(73, 190, 220, 0.2);
-
-  animation: loaderTrainMove 3.2s cubic-bezier(.35,0,.2,1) infinite;
+/* Dual Steel Rails */
+.loader-steel-rail {
+  stroke: #6ce1ff;
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px rgba(108, 225, 255, 0.75));
 }
 
-.loader-train-window {
-  position: absolute;
-
-  top: 7px;
-
-  width: 15px;
-  height: 10px;
-
-  border-radius: 2px;
-
-  background: #123c55;
-
-  border: 1px solid rgba(92, 206, 232, 0.35);
+/* Track Block Signal */
+.loader-signal-glow {
+  animation: loaderSignalAspect 3.2s infinite;
 }
 
-.window-1 { left: 12px; }
-.window-2 { left: 34px; }
-.window-3 { left: 56px; }
+@keyframes loaderSignalAspect {
+  0%,
+  60% {
+    fill: #f19a32;
+    filter: drop-shadow(0 0 8px rgba(241, 154, 50, 0.95)) drop-shadow(0 0 20px rgba(241, 154, 50, 0.4));
+  }
 
-.loader-train-light {
-  position: absolute;
-
-  right: -4px;
-  top: 14px;
-
-  width: 7px;
-  height: 7px;
-
-  border-radius: 50%;
-
-  background: #fff;
-
-  box-shadow:
-    0 0 12px 4px rgba(255, 255, 255, 0.7);
+  72%,
+  100% {
+    fill: #36d58a;
+    filter: drop-shadow(0 0 10px rgba(54, 213, 138, 1)) drop-shadow(0 0 24px rgba(54, 213, 138, 0.5));
+  }
 }
 
-.loader-wheel {
-  position: absolute;
+/* =========================================================
+   ANIMATED HIGH-SPEED ELECTRIC TRAINSET
+   ========================================================= */
 
-  bottom: -6px;
-
-  width: 10px;
-  height: 10px;
-
-  border-radius: 50%;
-
-  background: #101b22;
-
-  border: 2px solid #718791;
+.loader-animated-train {
+  animation: loaderTrainGlide 3.2s cubic-bezier(0.35, 0, 0.2, 1) infinite;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.75));
 }
 
-.wheel-1 {
-  left: 15px;
+@keyframes loaderTrainGlide {
+  0% {
+    transform: translateX(-240px);
+  }
+
+  65% {
+    transform: translateX(500px);
+  }
+
+  100% {
+    transform: translateX(780px);
+  }
 }
 
-.wheel-2 {
-  right: 15px;
+/* Aerodynamic Locomotive */
+.loader-loco-body {
+  fill: #f4f8fb;
+  stroke: #7ce0ff;
+  stroke-width: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
 }
 
-/* SIGNAL */
-
-.loader-signal {
-  position: absolute;
-
-  right: 4%;
-
-  top: 10px;
-
-  width: 18px;
-  height: 80px;
+/* Passenger Coach */
+.loader-coach-body {
+  fill: #edf3f7;
+  stroke: #6cd0ee;
+  stroke-width: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
 }
 
-.signal-post {
-  position: absolute;
-
-  left: 8px;
-  top: 12px;
-
-  width: 2px;
-  height: 68px;
-
-  background: rgba(150, 175, 185, 0.55);
+/* Speed Livery Stripes */
+.loader-stripe-saffron {
+  fill: #ff8c00;
 }
 
-.signal-light {
-  position: absolute;
-
-  left: 2px;
-  top: 0;
-
-  width: 14px;
-  height: 14px;
-
-  border-radius: 50%;
-
-  background: #f19a32;
-
-  box-shadow:
-    0 0 12px rgba(241, 154, 50, 0.8),
-    0 0 30px rgba(241, 154, 50, 0.25);
-
-  animation:
-    loaderSignalGreen 3.2s infinite;
+.loader-stripe-blue {
+  fill: #0c436c;
 }
 
-/* BOTTOM STATUS */
+.loader-stripe-green {
+  fill: #138808;
+}
+
+/* Driver Cab Curved Visor Windshield */
+.loader-windshield {
+  fill: #071724;
+  stroke: #4fd1f5;
+  stroke-width: 0.8;
+}
+
+/* Illuminated Passenger Windows */
+.loader-window-glow {
+  fill: #6ce1ff;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 4px rgba(108, 225, 255, 0.8));
+}
+
+/* Overhead Electric Pantograph */
+.loader-pantograph {
+  fill: none;
+  stroke: #a2e8fc;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px rgba(162, 232, 252, 0.85));
+}
+
+/* Accordion Coupler */
+.loader-gangway {
+  fill: #0d1a24;
+  stroke: #254258;
+  stroke-width: 1;
+}
+
+/* Bogie Frames */
+.loader-bogie {
+  fill: #14222c;
+  stroke: #335368;
+  stroke-width: 0.6;
+}
+
+/* Steel Wheels Sitting Flush on Rails */
+.loader-steel-wheel {
+  fill: #0c161d;
+  stroke: #8ac0d6;
+  stroke-width: 1.2;
+  filter: drop-shadow(0 0 3px rgba(138, 192, 214, 0.45));
+}
+
+/* High-Intensity Forward Headlights */
+.loader-headlight-lens {
+  fill: #ffffff;
+  filter: drop-shadow(0 0 6px #ffffff) drop-shadow(0 0 12px #6ce1ff);
+}
+
+.loader-headlight-cone {
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.88;
+}
+
+/* Rear Tail Warning Lights */
+.loader-taillight {
+  fill: #ff3333;
+  filter: drop-shadow(0 0 4px #ff2222) drop-shadow(0 0 8px #ff2222);
+}
+
+/* =========================================================
+   BOTTOM STATUS
+   ========================================================= */
 
 .railway-loader-message {
   display: flex;
   align-items: center;
   gap: 12px;
 
-  margin-top: 35px;
+  margin-top: 25px;
 
-  font-size: 8px;
+  font-size: 8.5px;
   letter-spacing: 0.2em;
 
-  color: rgba(151, 198, 212, 0.4);
+  color: rgba(151, 198, 212, 0.45);
 }
 
 .loader-separator {
   color: rgba(241, 154, 50, 0.7);
 }
 
-/* ANIMATIONS */
-
-@keyframes loaderTrainMove {
-  0% {
-    left: -100px;
-  }
-
-  65% {
-    left: calc(100% - 30px);
-  }
-
-  100% {
-    left: calc(100% + 100px);
-  }
-}
-
-@keyframes loaderSignalGreen {
-  0%,
-  65% {
-    background: #f19a32;
-
-    box-shadow:
-      0 0 12px rgba(241, 154, 50, 0.8),
-      0 0 30px rgba(241, 154, 50, 0.25);
-  }
-
-  75%,
-  100% {
-    background: #36d58a;
-
-    box-shadow:
-      0 0 12px rgba(54, 213, 138, 0.9),
-      0 0 30px rgba(54, 213, 138, 0.35);
-  }
-}
+/* GENERAL ANIMATIONS */
 
 @keyframes loaderSignalPulse {
   0%,
@@ -446,15 +402,15 @@
 
 @media (max-width: 600px) {
   .railway-loader-brand {
-    margin-bottom: 45px;
+    margin-bottom: 35px;
   }
 
   .railway-loader-brand strong {
     font-size: 10px;
   }
 
-  .railway-loader-track {
-    width: 90%;
+  .railway-loader-track-container {
+    width: 96%;
   }
 
   .railway-loader-message {
