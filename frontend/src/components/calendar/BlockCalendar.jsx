@@ -52,6 +52,7 @@ export default function BlockCalendar() {
   const { data, loading, error } = useFetch('/blocks', { plans: [] });
   const [selected, setSelected] = useState(null);
   const [showExplainTaskId, setShowExplainTaskId] = useState(null);
+  const [selectedMovementIndex, setSelectedMovementIndex] = useState(null);
   const [view, setView] = useState(Views.WEEK);
   const [date, setDate] = useState(new Date('2026-08-31T00:00:00.000Z'));
   const [filter, setFilter] = useState('ALL');
@@ -70,6 +71,68 @@ export default function BlockCalendar() {
       (status === 'CONFLICT' || (Array.isArray(plan?.conflicts) && plan.conflicts.length > 0)) &&
       !isRejected(plan)
     );
+  };
+
+  const getMovementConflictInfo = (item, block) => {
+    if (!block) return null;
+
+    if (isRejected(block)) {
+      return {
+        hasConflict: true,
+        type: 'ADMIN REJECTION',
+        severity: 'HIGH',
+        text: block.conflict_flags?.rejection_reason || `Block window rejected on ${block.section}. Movement ${item.train_number || item.task?.source_id || ''} cannot proceed as scheduled.`,
+        isResolved: false,
+      };
+    }
+
+    // 1. Check if there are specific conflict records in block.conflicts
+    if (Array.isArray(block.conflicts) && block.conflicts.length > 0) {
+      const match = block.conflicts.find(c =>
+        (item.train_number && c.description?.includes(item.train_number)) ||
+        (item.task?.source_id && c.description?.includes(item.task.source_id)) ||
+        (item.task?.department && c.description?.toLowerCase().includes(item.task.department.toLowerCase()))
+      );
+
+      if (match) {
+        return {
+          hasConflict: true,
+          type: String(match.conflict_type || 'CAPACITY').toUpperCase(),
+          severity: String(match.severity || 'MEDIUM').toUpperCase(),
+          text: match.description || `Corridor overlap on ${block.section} during planned maintenance window.`,
+          isResolved: Boolean(match.is_resolved),
+        };
+      }
+
+      const first = block.conflicts[0];
+      return {
+        hasConflict: true,
+        type: String(first.conflict_type || 'CORRIDOR OVERLAP').toUpperCase(),
+        severity: String(first.severity || 'MEDIUM').toUpperCase(),
+        text: first.description || `Corridor conflict on ${block.section} affecting planned track occupancy.`,
+        isResolved: Boolean(first.is_resolved),
+      };
+    }
+
+    // 2. Check if block has conflict status or conflict flags
+    if (hasConflict(block)) {
+      return {
+        hasConflict: true,
+        type: 'CAPACITY OVERLAP',
+        severity: 'HIGH',
+        text: `Corridor overlap and headway conflict detected on ${block.section} during planned maintenance window (${new Date(block.planned_start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(block.planned_end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}). Operational movement requires speed restriction or path regulation.`,
+        isResolved: false,
+      };
+    }
+
+    // 3. Clear / No conflict
+    return {
+      hasConflict: false,
+      type: 'HEADWAY CLEAR',
+      severity: 'LOW',
+      text: `No active headway, crossing, or corridor conflict detected for movement ${item.train_number || item.task?.source_id || 'window'} on ${block.section}. Safe headway maintained between ${block.from_km} km and ${block.to_km} km.`,
+      isResolved: true,
+    };
   };
 
   const isApproved = (plan) => {
@@ -298,6 +361,7 @@ export default function BlockCalendar() {
                 setActionError('');
                 setSelected(event.resource);
                 setShowExplainTaskId(null);
+                setSelectedMovementIndex(null);
               }}
               popup
               style={{ height: 650 }}
@@ -320,7 +384,7 @@ export default function BlockCalendar() {
       {selected && (
         <div className="calendar-detail-overlay">
           <div className="calendar-detail-panel">
-            <button className="close calendar-close" onClick={() => { setSelected(null); setShowExplainTaskId(null); }} aria-label="Close">×</button>
+            <button className="close calendar-close" onClick={() => { setSelected(null); setShowExplainTaskId(null); setSelectedMovementIndex(null); }} aria-label="Close">×</button>
 
             <div className="detail-panel-header">
               <span className="eyebrow">BLOCK DETAILS</span>
@@ -489,20 +553,214 @@ export default function BlockCalendar() {
             )}
 
             <div className="detail-section">
-              <span className="eyebrow">LINKED TASKS & TRAINS</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span className="eyebrow" style={{ margin: 0 }}>LINKED TASKS & TRAINS</span>
+                <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 600 }}>Click to view conflict details</span>
+              </div>
+
               {(selected.trains || []).length ? (
-                selected.trains.map((item, index) => (
-                  <button type="button" className="task-line" key={item.id || index} onClick={() => setShowExplainTaskId(item.task_id || null)} disabled={!item.task_id}>
-                    <strong>{item.task_id || item.train_number || 'Operational movement'}</strong>
-                    {item.task?.department && <small>{item.task.department}</small>}
-                  </button>
-                ))
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {selected.trains.map((item, index) => {
+                    const isSelected = selectedMovementIndex === index;
+                    const conflictInfo = getMovementConflictInfo(item, selected);
+
+                    return (
+                      <div
+                        key={item.id || index}
+                        style={{
+                          border: isSelected
+                            ? conflictInfo?.hasConflict
+                              ? '1.5px solid #f87171'
+                              : '1.5px solid #60a5fa'
+                            : '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          background: isSelected ? (conflictInfo?.hasConflict ? 'rgba(254, 242, 242, 0.6)' : 'rgba(239, 246, 255, 0.6)') : '#ffffff',
+                          overflow: 'hidden',
+                          transition: 'all 0.2s ease',
+                          boxShadow: isSelected ? '0 2px 8px rgba(16, 42, 67, 0.08)' : '0 1px 2px rgba(0,0,0,0.02)'
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedMovementIndex(isSelected ? null : index);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            background: 'none',
+                            border: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '10px',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            fontFamily: 'inherit'
+                          }}
+                        >
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <strong style={{ fontSize: '12.5px', color: '#102a43', fontWeight: 800 }}>
+                                {item.train_number ? `🚆 Train ${item.train_number}` : ''}
+                                {item.train_number && item.task?.source_id ? ' • ' : ''}
+                                {item.task?.source_id || (item.task_id ? `Task ${String(item.task_id).slice(0, 8)}` : 'Operational Movement')}
+                              </strong>
+                              {conflictInfo?.hasConflict ? (
+                                <span style={{ fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', background: '#fee2e2', color: '#b91c1c' }}>
+                                  ⚠ CONFLICT
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', background: '#dcfce7', color: '#15803d' }}>
+                                  ✓ CLEAR
+                                </span>
+                              )}
+                            </div>
+                            <small style={{ display: 'block', color: '#64748b', fontSize: '11px', marginTop: '2px', lineHeight: 1.3 }}>
+                              {item.task?.description || item.notes || `${selected.section} corridor passage`}
+                            </small>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                            {item.task?.department && (
+                              <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: '#eff6ff', color: '#2563eb' }}>
+                                {item.task.department}
+                              </span>
+                            )}
+                            <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 700 }}>
+                              {isSelected ? '▲' : '▼'}
+                            </span>
+                          </div>
+                        </button>
+
+                        {/* EXPANDED CONFLICT & MOVEMENT DETAILS */}
+                        {isSelected && conflictInfo && (
+                          <div style={{
+                            padding: '10px 12px 12px',
+                            borderTop: '1px solid #e2e8f0',
+                            background: '#ffffff'
+                          }}>
+                            {/* CONFLICT TEXT SECTION */}
+                            <div style={{
+                              background: conflictInfo.hasConflict ? 'rgba(239, 68, 68, 0.08)' : 'rgba(34, 197, 94, 0.08)',
+                              border: conflictInfo.hasConflict ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(34, 197, 94, 0.25)',
+                              borderRadius: '6px',
+                              padding: '10px 12px',
+                              marginBottom: '10px'
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span style={{
+                                  fontSize: '10.5px',
+                                  fontWeight: 800,
+                                  color: conflictInfo.hasConflict ? '#991b1b' : '#166534',
+                                  letterSpacing: '0.6px',
+                                  textTransform: 'uppercase'
+                                }}>
+                                  {conflictInfo.hasConflict ? '⚠ Active Conflict Text' : '✓ Conflict Status'}
+                                </span>
+                                <span style={{
+                                  fontSize: '9.5px',
+                                  fontWeight: 800,
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  background: conflictInfo.hasConflict ? '#fee2e2' : '#dcfce7',
+                                  color: conflictInfo.hasConflict ? '#991b1b' : '#166534'
+                                }}>
+                                  {conflictInfo.type} ({conflictInfo.severity})
+                                </span>
+                              </div>
+                              <p style={{
+                                margin: 0,
+                                fontSize: '11.5px',
+                                color: conflictInfo.hasConflict ? '#7f1d1d' : '#14532d',
+                                lineHeight: 1.45,
+                                fontWeight: 500
+                              }}>
+                                {conflictInfo.text}
+                              </p>
+                            </div>
+
+                            {/* MOVEMENT & DEFECT PARAMETERS */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '11px', marginBottom: '8px' }}>
+                              {item.train_number && (
+                                <div style={{ background: '#f8fafc', padding: '6px 8px', borderRadius: '5px', border: '1px solid #e2e8f0' }}>
+                                  <small style={{ color: '#64748b', display: 'block', fontSize: '9px', fontWeight: 700 }}>TRAIN / RUNNER</small>
+                                  <strong style={{ color: '#102a43' }}>{item.train_number}</strong>
+                                </div>
+                              )}
+                              {item.impact_type && (
+                                <div style={{ background: '#f8fafc', padding: '6px 8px', borderRadius: '5px', border: '1px solid #e2e8f0' }}>
+                                  <small style={{ color: '#64748b', display: 'block', fontSize: '9px', fontWeight: 700 }}>IMPACT DISCIPLINE</small>
+                                  <strong style={{ color: '#102a43', textTransform: 'capitalize' }}>{item.impact_type}</strong>
+                                </div>
+                              )}
+                              {item.task?.source_id && (
+                                <div style={{ background: '#f8fafc', padding: '6px 8px', borderRadius: '5px', border: '1px solid #e2e8f0' }}>
+                                  <small style={{ color: '#64748b', display: 'block', fontSize: '9px', fontWeight: 700 }}>DEFECT SOURCE</small>
+                                  <strong style={{ color: '#102a43' }}>{item.task.source_id}</strong>
+                                </div>
+                              )}
+                              {item.task?.severity && (
+                                <div style={{ background: '#f8fafc', padding: '6px 8px', borderRadius: '5px', border: '1px solid #e2e8f0' }}>
+                                  <small style={{ color: '#64748b', display: 'block', fontSize: '9px', fontWeight: 700 }}>DEFECT SEVERITY</small>
+                                  <strong style={{ color: '#102a43', textTransform: 'capitalize' }}>{item.task.severity}</strong>
+                                </div>
+                              )}
+                              {item.task?.location && (
+                                <div style={{ background: '#f8fafc', padding: '6px 8px', borderRadius: '5px', border: '1px solid #e2e8f0' }}>
+                                  <small style={{ color: '#64748b', display: 'block', fontSize: '9px', fontWeight: 700 }}>CORRIDOR LOCATION</small>
+                                  <strong style={{ color: '#102a43' }}>{item.task.location}</strong>
+                                </div>
+                              )}
+                              {item.task?.priority_score !== undefined && item.task?.priority_score !== null && (
+                                <div style={{ background: '#f8fafc', padding: '6px 8px', borderRadius: '5px', border: '1px solid #e2e8f0' }}>
+                                  <small style={{ color: '#64748b', display: 'block', fontSize: '9px', fontWeight: 700 }}>AI PRIORITY SCORE</small>
+                                  <strong style={{ color: '#2563eb' }}>{Math.round(item.task.priority_score)}/100</strong>
+                                </div>
+                              )}
+                            </div>
+
+                            {item.task?.description && (
+                              <div style={{ background: '#f8fafc', padding: '6px 8px', borderRadius: '5px', border: '1px solid #e2e8f0', fontSize: '11px', marginBottom: '8px' }}>
+                                <small style={{ color: '#64748b', display: 'block', fontSize: '9px', fontWeight: 700 }}>MAINTENANCE WORK</small>
+                                <span style={{ color: '#334155' }}>{item.task.description}</span>
+                              </div>
+                            )}
+
+                            {item.task_id && (
+                              <button
+                                type="button"
+                                onClick={() => setShowExplainTaskId(showExplainTaskId === item.task_id ? null : item.task_id)}
+                                style={{
+                                  padding: '5px 10px',
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  borderRadius: '5px',
+                                  border: '1px solid #cbd5e1',
+                                  background: showExplainTaskId === item.task_id ? '#1e293b' : '#f1f5f9',
+                                  color: showExplainTaskId === item.task_id ? '#ffffff' : '#334155',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {showExplainTaskId === item.task_id ? 'Hide AI Rationale' : 'View AI Prioritization Rationale →'}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
                 <p className="muted">No linked movements.</p>
               )}
             </div>
 
-            {showExplainTaskId && <ExplainPanel taskId={showExplainTaskId} onClose={() => setShowExplainTaskId(null)} />}
+            {showExplainTaskId && (
+              <div style={{ marginTop: '14px', borderTop: '1px solid #e2e8f0', paddingTop: '14px', overflowX: 'auto' }}>
+                <ExplainPanel taskId={showExplainTaskId} onClose={() => setShowExplainTaskId(null)} />
+              </div>
+            )}
             {taskId && !showExplainTaskId && (
               <div className="detail-section">
                 <span className="eyebrow">AI EXPLANATION</span>
