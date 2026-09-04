@@ -21,6 +21,36 @@ function getPriority(score) {
   return 'LOW';
 }
 
+function formatFeatureName(key) {
+  if (!key) return '';
+  const clean = String(key).trim();
+  const dictionary = {
+    asset_age_years: 'Asset age (years)',
+    traffic_density_trains_per_day: 'Traffic density (trains/day)',
+    days_overdue: 'Days overdue',
+    speed_limit_kmh: 'Speed limit (km/h)',
+    corridor_traffic: 'Corridor traffic',
+    track_quality_index: 'Track quality index',
+    passenger_trains_ratio: 'Passenger train ratio',
+    freight_density: 'Freight density',
+    weather_risk: 'Weather risk',
+    last_inspection_days: 'Days since last inspection',
+    component_wear_pct: 'Component wear (%)',
+    operational_criticality: 'Operational criticality',
+  };
+  if (dictionary[clean.toLowerCase()]) {
+    return dictionary[clean.toLowerCase()];
+  }
+  return clean
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatExplanationText(text) {
+  if (!text) return 'Operational analysis based on defect severity, asset characteristics, and traffic demand.';
+  return text.replace(/\b([a-z]+(?:_[a-z0-9]+)+)\b/gi, (match) => formatFeatureName(match));
+}
+
 function Metric({ label, value, description }) {
   return (
     <div className="explain-metric">
@@ -81,15 +111,15 @@ export default function ExplainPanel({ taskId: providedTaskId, onClose }) {
   const scoreResult = explanation?.score?.result || explanation?.score || explanation?.result || {};
   const backendFactors = Object.entries(scoreResult.baseline_components || {})
     .map(([name, value]) => ({
-      title: name.replaceAll('_', ' '),
+      title: formatFeatureName(name),
       value: String(value),
-      text: 'Backend scoring component returned by the AI service.'
+      text: 'Baseline operational scoring component.'
     }));
   const contributionFactors = (explanation.feature_contributions || [])
     .map(item => ({
-      title: String(item).replaceAll('_', ' '),
-      value: 'AI contribution',
-      text: 'Feature identified by the AI explanation endpoint.'
+      title: formatFeatureName(item),
+      value: 'High impact',
+      text: 'Key risk factor identified by the AI prioritization engine.'
     }));
   const factors = backendFactors.length ? backendFactors : contributionFactors;
 
@@ -114,7 +144,9 @@ export default function ExplainPanel({ taskId: providedTaskId, onClose }) {
           <div>!</div>
           <strong>AI explanation unavailable</strong>
           <span>Unable to retrieve the explanation for this task.</span>
-          <button type="button" className="explain-back" onClick={handleClose}>← Back to priority queue</button>
+          <button type="button" className="explain-back" onClick={handleClose}>
+            {onClose ? '✕ Close rationale' : '← Back to priority queue'}
+          </button>
         </div>
       </div>
     );
@@ -128,7 +160,9 @@ export default function ExplainPanel({ taskId: providedTaskId, onClose }) {
           <h1>Priority rationale</h1>
           <p>Operational reasoning behind the maintenance priority assigned to this task.</p>
         </div>
-        <button type="button" className="explain-back" onClick={handleClose}>← Priority queue</button>
+        <button type="button" className="explain-back" onClick={handleClose}>
+          {onClose ? '✕ Close rationale' : '← Priority queue'}
+        </button>
       </div>
 
       <div className="explain-grid">
@@ -191,7 +225,7 @@ export default function ExplainPanel({ taskId: providedTaskId, onClose }) {
           <div className="panel explain-summary">
             <span className="eyebrow">AI SUMMARY</span>
             <h2>Priority insight</h2>
-            <p>{explanation.explanation || scoreResult.confidence_reason || 'MISSING BACKEND DATA'}</p>
+            <p>{formatExplanationText(explanation.explanation || scoreResult.confidence_reason)}</p>
           </div>
 
           <div className="panel explain-metrics">

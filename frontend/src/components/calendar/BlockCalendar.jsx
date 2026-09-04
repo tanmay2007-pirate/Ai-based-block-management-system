@@ -383,7 +383,7 @@ export default function BlockCalendar() {
 
       {selected && (
         <div className="calendar-detail-overlay">
-          <div className="calendar-detail-panel">
+          <div className={`calendar-detail-panel ${showExplainTaskId ? 'has-explain' : ''}`}>
             <button className="close calendar-close" onClick={() => { setSelected(null); setShowExplainTaskId(null); setSelectedMovementIndex(null); }} aria-label="Close">×</button>
 
             <div className="detail-panel-header">
