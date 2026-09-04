@@ -38,7 +38,9 @@ export default function Topbar() {
       <header className="glass-navbar">
         <div className="navbar-brand">
           <NavLink to="/overview" className="navbar-logo" onClick={() => setMobileOpen(false)}>
-            <span>IR</span>
+            <span className="navbar-logo-badge">
+              <img src="/indian-railways-seal.png" alt="Indian Railways" className="navbar-logo-img" />
+            </span>
             <div>
               Railway
               <small>Block Control</small>
@@ -123,7 +125,9 @@ export default function Topbar() {
       <aside className={`mobile-nav-drawer ${mobileOpen ? 'is-open' : ''}`} aria-label="Mobile Navigation">
         <div className="mobile-drawer-header">
           <div className="navbar-logo">
-            <span>IR</span>
+            <span className="navbar-logo-badge">
+              <img src="/indian-railways-seal.png" alt="Indian Railways" className="navbar-logo-img" />
+            </span>
             <div>
               Railway
               <small>Operations Menu</small>
