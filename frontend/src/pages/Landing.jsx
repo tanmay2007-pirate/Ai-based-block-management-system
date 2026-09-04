@@ -75,9 +75,23 @@ function NetworkGraphic() {
       >
         <defs>
           <linearGradient id="trackGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" />
-            <stop offset="50%" />
-            <stop offset="100%" />
+            <stop offset="0%" stopColor="#44bde2" stopOpacity="0.8" />
+            <stop offset="50%" stopColor="#7ee3ff" stopOpacity="1" />
+            <stop offset="100%" stopColor="#44bde2" stopOpacity="0.8" />
+          </linearGradient>
+
+          <linearGradient id="headlightBeam" x1="0%" y1="50%" x2="100%" y2="50%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+            <stop offset="25%" stopColor="#a4edff" stopOpacity="0.5" />
+            <stop offset="70%" stopColor="#41c6ee" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="#41c6ee" stopOpacity="0" />
+          </linearGradient>
+
+          <linearGradient id="headlightBeamOrange" x1="0%" y1="50%" x2="100%" y2="50%">
+            <stop offset="0%" stopColor="#fff8e7" stopOpacity="0.95" />
+            <stop offset="30%" stopColor="#ffb347" stopOpacity="0.45" />
+            <stop offset="75%" stopColor="#ff8c00" stopOpacity="0.1" />
+            <stop offset="100%" stopColor="#ff8c00" stopOpacity="0" />
           </linearGradient>
 
           <filter id="softGlow">
@@ -89,53 +103,76 @@ function NetworkGraphic() {
           </filter>
         </defs>
 
-        {/* MAIN RAILWAY CORRIDOR */}
+        {/* ================= RAILWAY TRACK 1 (MAIN CORRIDOR) ================= */}
+        {/* Ballast track bed foundation */}
         <path
-          className="track track-main"
+          className="track-ballast"
           d="M40 360 C130 320 175 250 245 260 S350 340 430 290 S555 150 720 120"
         />
 
+        {/* Railway Sleepers / Ties (crossbars perpendicular to rails) */}
         <path
-          className="track-rail"
-          d="M40 352 C130 312 175 242 245 252 S350 332 430 282 S555 142 720 112"
+          className="track-sleepers main-sleepers"
+          d="M40 360 C130 320 175 250 245 260 S350 340 430 290 S555 150 720 120"
         />
 
+        {/* Upper Steel Rail */}
         <path
-          className="track-rail"
-          d="M40 368 C130 328 175 258 245 268 S350 348 430 298 S555 158 720 128"
+          className="track-steel-rail"
+          d="M40 353 C130 313 175 243 245 253 S350 333 430 283 S555 143 720 113"
         />
 
-        {/* SECOND TRACK */}
+        {/* Lower Steel Rail */}
         <path
-          className="track"
+          className="track-steel-rail"
+          d="M40 367 C130 327 175 257 245 267 S350 347 430 297 S555 157 720 127"
+        />
+
+        {/* ================= RAILWAY TRACK 2 (SECONDARY CORRIDOR) ================= */}
+        <path
+          className="track-ballast"
           d="M20 135 C125 180 185 120 270 150 S400 235 485 190 S610 125 735 205"
         />
 
         <path
-          className="track-rail"
-          d="M20 127 C125 172 185 112 270 142 S400 227 485 182 S610 117 735 197"
+          className="track-sleepers secondary-sleepers"
+          d="M20 135 C125 180 185 120 270 150 S400 235 485 190 S610 125 735 205"
         />
 
         <path
-          className="track-rail"
-          d="M20 143 C125 188 185 128 270 158 S400 243 485 198 S610 133 735 213"
+          className="track-steel-rail"
+          d="M20 128 C125 173 185 113 270 143 S400 228 485 183 S610 118 735 198"
         />
 
-        {/* MAINTENANCE SIDING */}
         <path
-          className="track track-maintenance"
+          className="track-steel-rail"
+          d="M20 142 C125 187 185 127 270 157 S400 242 485 197 S610 132 735 212"
+        />
+
+        {/* ================= RAILWAY TRACK 3 (MAINTENANCE SIDING) ================= */}
+        <path
+          className="track-ballast maintenance-ballast"
           d="M190 410 C275 365 315 365 390 395 S500 445 610 405"
         />
 
         <path
-          className="track-rail maintenance-rail"
-          d="M190 402 C275 357 315 357 390 387 S500 437 610 397"
+          className="track-sleepers maintenance-sleepers"
+          d="M190 410 C275 365 315 365 390 395 S500 445 610 405"
         />
 
         <path
-          className="track-rail maintenance-rail"
-          d="M190 418 C275 373 315 373 390 403 S500 453 610 413"
+          className="track-steel-rail maintenance-rail"
+          d="M190 403 C275 358 315 358 390 388 S500 438 610 398"
         />
+
+        <path
+          className="track-steel-rail maintenance-rail"
+          d="M190 417 C275 372 315 372 390 402 S500 452 610 412"
+        />
+
+        {/* Track Terminal Buffer Stop */}
+        <line className="buffer-stop" x1="608" y1="395" x2="608" y2="423" />
+        <rect x="606" y="403" width="5" height="12" rx="1" fill="#ff5252" />
 
         {/* BLOCK DIVIDERS */}
         <line
@@ -200,27 +237,113 @@ function NetworkGraphic() {
           r="22"
         />
 
-        {/* TRAIN 1 — FOLLOWS MAIN RAILWAY */}
+        {/* ================= TRAIN 1 (HIGH-SPEED VANDE BHARAT EXPRESS) ================= */}
         <g className="rail-train train-one">
           <animateMotion
-            dur="11s"
+            dur="12s"
             repeatCount="indefinite"
             rotate="auto"
             path="M40 360 C130 320 175 250 245 260 S350 340 430 290 S555 150 720 120"
           />
 
-          <g transform="translate(-46 -15)">
-            <rect x="0" y="0" width="92" height="30" rx="7" />
-            <rect x="12" y="7" width="18" height="9" rx="2" />
-            <rect x="38" y="7" width="18" height="9" rx="2" />
-            <rect x="64" y="7" width="15" height="9" rx="2" />
+          {/* Forward Headlight Beam illuminating the track */}
+          <polygon
+            points="48,0 125,-16 125,16"
+            fill="url(#headlightBeam)"
+            className="train-headlight-cone"
+          />
 
-            <circle cx="20" cy="31" r="5" />
-            <circle cx="73" cy="31" r="5" />
+          {/* TRAILING PASSENGER COACH */}
+          <g className="train-car train-coach" transform="translate(-56, 0)">
+            {/* Coach Chassis & Body */}
+            <rect x="-44" y="-8" width="42" height="16" rx="3" className="train-coach-body" />
+            {/* Speed Stripes */}
+            <rect x="-44" y="-2" width="42" height="4" className="train-stripe-saffron" />
+            <rect x="-44" y="2" width="42" height="1.5" className="train-stripe-blue" />
+            {/* Passenger Windows */}
+            <rect x="-38" y="-6.5" width="6" height="3" rx="0.8" className="train-window-glow" />
+            <rect x="-30" y="-6.5" width="6" height="3" rx="0.8" className="train-window-glow" />
+            <rect x="-22" y="-6.5" width="6" height="3" rx="0.8" className="train-window-glow" />
+            <rect x="-14" y="-6.5" width="6" height="3" rx="0.8" className="train-window-glow" />
+            <rect x="-38" y="3.5" width="6" height="3" rx="0.8" className="train-window-glow" />
+            <rect x="-30" y="3.5" width="6" height="3" rx="0.8" className="train-window-glow" />
+            <rect x="-22" y="3.5" width="6" height="3" rx="0.8" className="train-window-glow" />
+            <rect x="-14" y="3.5" width="6" height="3" rx="0.8" className="train-window-glow" />
+            {/* Red Tail Markers */}
+            <circle cx="-43.5" cy="-4.5" r="1.4" className="train-taillight" />
+            <circle cx="-43.5" cy="4.5" r="1.4" className="train-taillight" />
+            {/* Bogies (Wheelsets on Rails) */}
+            <rect x="-40" y="-9" width="10" height="2" rx="0.5" className="train-bogie" />
+            <rect x="-40" y="7" width="10" height="2" rx="0.5" className="train-bogie" />
+            <circle cx="-38" cy="-8" r="1.8" className="train-steel-wheel" />
+            <circle cx="-32" cy="-8" r="1.8" className="train-steel-wheel" />
+            <circle cx="-38" cy="8" r="1.8" className="train-steel-wheel" />
+            <circle cx="-32" cy="8" r="1.8" className="train-steel-wheel" />
+            <rect x="-18" y="-9" width="10" height="2" rx="0.5" className="train-bogie" />
+            <rect x="-18" y="7" width="10" height="2" rx="0.5" className="train-bogie" />
+            <circle cx="-16" cy="-8" r="1.8" className="train-steel-wheel" />
+            <circle cx="-10" cy="-8" r="1.8" className="train-steel-wheel" />
+            <circle cx="-16" cy="8" r="1.8" className="train-steel-wheel" />
+            <circle cx="-10" cy="8" r="1.8" className="train-steel-wheel" />
+          </g>
+
+          {/* Gangway Coupler Bellows */}
+          <rect x="-58" y="-6.5" width="4" height="13" rx="1" className="train-gangway" />
+
+          {/* LEADING LOCOMOTIVE ENGINE */}
+          <g className="train-car train-locomotive">
+            {/* Aerodynamic Locomotive Body with Bullet Nose */}
+            <path
+              d="M -54 -8 L 26 -8 Q 42 -7 48 0 Q 42 7 26 8 L -54 8 Z"
+              className="train-loco-body"
+            />
+            {/* Tricolour Speed Livery */}
+            <path
+              d="M -15 -8 L 26 -8 Q 40 -7 47 0 L 41 0 Q 34 -4 24 -4 L -15 -4 Z"
+              className="train-stripe-saffron"
+            />
+            <rect x="-54" y="-2" width="60" height="4" className="train-stripe-blue" />
+            <path
+              d="M -15 8 L 26 8 Q 40 7 47 0 L 41 0 Q 34 4 24 4 L -15 4 Z"
+              className="train-stripe-green"
+            />
+            {/* Streamlined Driver Cab Windshield */}
+            <path
+              d="M 24 -5.5 L 38 -4.5 Q 43 0 38 4.5 L 24 5.5 Z"
+              className="train-windshield"
+            />
+            {/* Cab Side Windows */}
+            <rect x="8" y="-6.5" width="8" height="3" rx="0.8" className="train-window-glow" />
+            <rect x="-6" y="-6.5" width="8" height="3" rx="0.8" className="train-window-glow" />
+            <rect x="-20" y="-6.5" width="8" height="3" rx="0.8" className="train-window-glow" />
+            <rect x="8" y="3.5" width="8" height="3" rx="0.8" className="train-window-glow" />
+            <rect x="-6" y="3.5" width="8" height="3" rx="0.8" className="train-window-glow" />
+            <rect x="-20" y="3.5" width="8" height="3" rx="0.8" className="train-window-glow" />
+            {/* Roof Electric Pantograph */}
+            <path
+              d="M -6 -8 L 1 -15 L 8 -8 M -2 -15 L 4 -15 M 1 -15 L 1 -17 L -3 -17 L 5 -17"
+              className="train-pantograph"
+            />
+            {/* Powerful Dual Headlights */}
+            <circle cx="47" cy="-2.5" r="1.8" className="train-headlight-lens" />
+            <circle cx="47" cy="2.5" r="1.8" className="train-headlight-lens" />
+            {/* Bogies (Wheelsets on Rails) */}
+            <rect x="-42" y="-9.2" width="11" height="2.4" rx="0.6" className="train-bogie" />
+            <rect x="-42" y="6.8" width="11" height="2.4" rx="0.6" className="train-bogie" />
+            <circle cx="-40" cy="-8" r="1.8" className="train-steel-wheel" />
+            <circle cx="-33" cy="-8" r="1.8" className="train-steel-wheel" />
+            <circle cx="-40" cy="8" r="1.8" className="train-steel-wheel" />
+            <circle cx="-33" cy="8" r="1.8" className="train-steel-wheel" />
+            <rect x="12" y="-9.2" width="11" height="2.4" rx="0.6" className="train-bogie" />
+            <rect x="12" y="6.8" width="11" height="2.4" rx="0.6" className="train-bogie" />
+            <circle cx="14" cy="-8" r="1.8" className="train-steel-wheel" />
+            <circle cx="21" cy="-8" r="1.8" className="train-steel-wheel" />
+            <circle cx="14" cy="8" r="1.8" className="train-steel-wheel" />
+            <circle cx="21" cy="8" r="1.8" className="train-steel-wheel" />
           </g>
         </g>
 
-        {/* TRAIN 2 — FOLLOWS SECOND RAILWAY */}
+        {/* ================= TRAIN 2 (REGIONAL INTERCITY EXPRESS) ================= */}
         <g className="rail-train train-two">
           <animateMotion
             dur="15s"
@@ -229,14 +352,63 @@ function NetworkGraphic() {
             path="M20 135 C125 180 185 120 270 150 S400 235 485 190 S610 125 735 205"
           />
 
-          <g transform="translate(-39 -13)">
-            <rect x="0" y="0" width="78" height="26" rx="6" />
-            <rect x="11" y="6" width="15" height="8" rx="2" />
-            <rect x="33" y="6" width="15" height="8" rx="2" />
-            <rect x="55" y="6" width="12" height="8" rx="2" />
+          {/* Forward Headlight Beam */}
+          <polygon
+            points="38,0 98,-13 98,13"
+            fill="url(#headlightBeamOrange)"
+            className="train-headlight-cone"
+          />
 
-            <circle cx="18" cy="27" r="4" />
-            <circle cx="62" cy="27" r="4" />
+          {/* TRAILING COACH */}
+          <g className="train-car train-coach" transform="translate(-46, 0)">
+            <rect x="-36" y="-7.5" width="34" height="15" rx="2.5" className="train-coach-body" />
+            <rect x="-36" y="-1.5" width="34" height="3" className="train-stripe-blue" />
+            <rect x="-30" y="-6" width="5" height="2.6" rx="0.6" className="train-window-glow" />
+            <rect x="-22" y="-6" width="5" height="2.6" rx="0.6" className="train-window-glow" />
+            <rect x="-14" y="-6" width="5" height="2.6" rx="0.6" className="train-window-glow" />
+            <rect x="-30" y="3.4" width="5" height="2.6" rx="0.6" className="train-window-glow" />
+            <rect x="-22" y="3.4" width="5" height="2.6" rx="0.6" className="train-window-glow" />
+            <rect x="-14" y="3.4" width="5" height="2.6" rx="0.6" className="train-window-glow" />
+            <circle cx="-35.5" cy="-4" r="1.2" className="train-taillight" />
+            <circle cx="-35.5" cy="4" r="1.2" className="train-taillight" />
+            {/* Bogies */}
+            <circle cx="-32" cy="-7.5" r="1.6" className="train-steel-wheel" />
+            <circle cx="-26" cy="-7.5" r="1.6" className="train-steel-wheel" />
+            <circle cx="-32" cy="7.5" r="1.6" className="train-steel-wheel" />
+            <circle cx="-26" cy="7.5" r="1.6" className="train-steel-wheel" />
+          </g>
+
+          {/* Gangway Coupler Bellows */}
+          <rect x="-48" y="-5.5" width="3" height="11" rx="0.8" className="train-gangway" />
+
+          {/* LEADING LOCOMOTIVE */}
+          <g className="train-car train-locomotive">
+            <path
+              d="M -44 -7.5 L 22 -7.5 Q 34 -6.5 38 0 Q 34 6.5 22 7.5 L -44 7.5 Z"
+              className="train-loco-body"
+            />
+            <rect x="-44" y="-1.5" width="48" height="3" className="train-stripe-saffron" />
+            <path
+              d="M 18 -4.5 L 30 -4 Q 34 0 30 4 L 18 4.5 Z"
+              className="train-windshield"
+            />
+            <rect x="4" y="-5.8" width="6" height="2.6" rx="0.6" className="train-window-glow" />
+            <rect x="-8" y="-5.8" width="6" height="2.6" rx="0.6" className="train-window-glow" />
+            <rect x="4" y="3.2" width="6" height="2.6" rx="0.6" className="train-window-glow" />
+            <rect x="-8" y="3.2" width="6" height="2.6" rx="0.6" className="train-window-glow" />
+            {/* Roof Pantograph */}
+            <path
+              d="M -4 -7.5 L 1 -13 L 6 -7.5 M -1 -13 L 3 -13"
+              className="train-pantograph"
+            />
+            {/* Headlights */}
+            <circle cx="37" cy="-2" r="1.5" className="train-headlight-lens" />
+            <circle cx="37" cy="2" r="1.5" className="train-headlight-lens" />
+            {/* Bogies */}
+            <circle cx="10" cy="-7.5" r="1.6" className="train-steel-wheel" />
+            <circle cx="16" cy="-7.5" r="1.6" className="train-steel-wheel" />
+            <circle cx="10" cy="7.5" r="1.6" className="train-steel-wheel" />
+            <circle cx="16" cy="7.5" r="1.6" className="train-steel-wheel" />
           </g>
         </g>
       </svg>

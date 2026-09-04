@@ -1066,35 +1066,64 @@
   overflow: visible;
 }
 
-.track {
+/* =========================================================
+   AUTHENTIC RAILWAY TRACK SYSTEM
+   (Ballast Bed, Cross-Ties/Sleepers, Dual Steel Rails)
+   ========================================================= */
+
+/* 1. Ballast Bed (Dark Gravel Foundation beneath sleepers) */
+.track-ballast {
   fill: none;
-  stroke: rgba(30, 156, 203, 0.28);
-  stroke-width: 16;
+  stroke: rgba(8, 26, 42, 0.85);
+  stroke-width: 22;
   stroke-linecap: round;
 }
 
-.track-rail {
+.maintenance-ballast {
+  stroke: rgba(36, 24, 12, 0.75);
+}
+
+/* 2. Railway Sleepers / Ties (Perpendicular Crossbars) */
+.track-sleepers {
   fill: none;
-  stroke: rgba(106, 220, 246, 0.55);
-  stroke-width: 2.5;
+  stroke: rgba(68, 142, 185, 0.55);
+  stroke-width: 17;
+  stroke-dasharray: 2.2 7.5;
+  stroke-linecap: butt;
+}
+
+.secondary-sleepers {
+  stroke: rgba(56, 128, 168, 0.48);
+}
+
+.maintenance-sleepers {
+  stroke: rgba(235, 148, 42, 0.52);
+  stroke-dasharray: 2.2 7;
+}
+
+/* 3. Dual Parallel Steel Rails */
+.track-steel-rail {
+  fill: none;
+  stroke: #6ce1ff;
+  stroke-width: 2.2;
   stroke-linecap: round;
-}
-
-.track-main {
-  stroke: rgba(12, 111, 153, 0.38);
-}
-
-.track-maintenance {
-  stroke: rgba(232, 139, 20, 0.16);
+  filter: drop-shadow(0 0 5px rgba(90, 220, 255, 0.45));
 }
 
 .maintenance-rail {
-  stroke: rgba(255, 166, 47, 0.65);
-  stroke-dasharray: 5 8;
+  stroke: #ffa733;
+  stroke-dasharray: 6 6;
+  filter: drop-shadow(0 0 5px rgba(255, 167, 51, 0.45));
+}
+
+.buffer-stop {
+  stroke: #ff4747;
+  stroke-width: 4;
+  stroke-linecap: round;
 }
 
 .block-divider {
-  stroke: rgba(117, 214, 240, 0.35);
+  stroke: rgba(140, 230, 255, 0.5);
   stroke-width: 2;
   stroke-dasharray: 3 4;
 }
@@ -1180,29 +1209,104 @@
   }
 }
 
-/* ---------------------------------------------------------
-   TRAINS
-   --------------------------------------------------------- */
+/* =========================================================
+   AUTHENTIC HIGH-SPEED TRAINS & LOCOMOTIVES
+   ========================================================= */
 
 .rail-train {
-  fill: #edf4f6;
-  stroke: rgba(255, 255, 255, 0.8);
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.7));
+  cursor: pointer;
+  transform-origin: center;
+}
+
+/* Aerodynamic Locomotive Engine Body */
+.train-loco-body {
+  fill: #f4f8fb;
+  stroke: #80d9f5;
+  stroke-width: 0.9;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
+}
+
+/* Trailing Passenger Coach Body */
+.train-coach-body {
+  fill: #edf3f7;
+  stroke: #72d2f0;
+  stroke-width: 0.9;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
+}
+
+/* Indian Railways Tricolour & High-Speed Speed Stripes */
+.train-stripe-saffron {
+  fill: #ff8c00;
+}
+
+.train-stripe-blue {
+  fill: #0c436c;
+}
+
+.train-stripe-green {
+  fill: #138808;
+}
+
+/* Streamlined Driver Cab Windshield */
+.train-windshield {
+  fill: #071724;
+  stroke: #4fd1f5;
+  stroke-width: 0.7;
+}
+
+/* Illuminated Passenger Windows */
+.train-window-glow {
+  fill: #6ce1ff;
+  opacity: 0.92;
+  filter: drop-shadow(0 0 3px rgba(108, 225, 255, 0.6));
+}
+
+/* Roof Electric Pantograph (Catenary Pickup) */
+.train-pantograph {
+  fill: none;
+  stroke: #a2e8fc;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 3px rgba(162, 232, 252, 0.7));
+}
+
+/* Flexible Accordion Gangway Coupler */
+.train-gangway {
+  fill: #0c1822;
+  stroke: #254258;
   stroke-width: 1;
-
-  filter: drop-shadow(0 5px 12px rgba(0, 0, 0, 0.35));
 }
 
-.rail-train rect {
-  fill: #eaf2f5;
+/* Steel Wheel Bogies sitting on the rails */
+.train-bogie {
+  fill: #192733;
+  stroke: #3c5a70;
+  stroke-width: 0.6;
 }
 
-.rail-train rect:not(:first-child) {
-  fill: #164765;
-  stroke: rgba(105, 217, 240, 0.3);
+.train-steel-wheel {
+  fill: #0e1820;
+  stroke: #8ac0d6;
+  stroke-width: 1;
 }
 
-.rail-train circle {
-  fill: #111d25;
+/* Forward High-Beam Headlights */
+.train-headlight-lens {
+  fill: #ffffff;
+  filter: drop-shadow(0 0 6px #ffffff) drop-shadow(0 0 12px #6ce1ff);
+}
+
+.train-headlight-cone {
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+/* Rear Tail Warning Lights */
+.train-taillight {
+  fill: #ff3333;
+  filter: drop-shadow(0 0 4px #ff2222) drop-shadow(0 0 8px #ff2222);
 }
 
 
