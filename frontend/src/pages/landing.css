@@ -37,16 +37,25 @@
 }
 
 .brand-mark {
-  width: 43px;
-  height: 43px;
-  display: grid;
-  place-items: center;
-  border-radius: 10px;
-  background: linear-gradient(145deg, #ffad22, #ed7d00);
-  color: white;
-  font-size: 18px;
-  font-weight: 900;
-  box-shadow: 0 8px 24px rgba(242, 140, 0, 0.22);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: radial-gradient(circle, #0a2542 0%, #051627 100%);
+  border: 1.5px solid rgba(255, 187, 51, 0.45);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 10px rgba(255, 170, 30, 0.2);
+  overflow: hidden;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.brand-mark-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .brand-copy {
@@ -1209,11 +1218,16 @@
   }
 }
 
+/* ---------------------------------------------------------
+   TRAINS
+   --------------------------------------------------------- */
 /* =========================================================
    AUTHENTIC HIGH-SPEED TRAINS & LOCOMOTIVES
    ========================================================= */
 
 .rail-train {
+  fill: #edf4f6;
+  stroke: rgba(255, 255, 255, 0.8);
   filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.7));
   cursor: pointer;
   transform-origin: center;

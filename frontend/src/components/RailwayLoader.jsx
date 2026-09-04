@@ -7,7 +7,13 @@ export default function RailwayLoader() {
 
       <div className="railway-loader-content">
         <div className="railway-loader-brand">
-          <span className="railway-loader-mark">IR</span>
+          <span className="railway-loader-mark">
+            <img
+              src="/indian-railways-seal.png"
+              alt="Indian Railways"
+              style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '50%' }}
+            />
+          </span>
 
           <div>
             <strong>RAILWAY BLOCK CONTROL</strong>
