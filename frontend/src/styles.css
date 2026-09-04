@@ -2499,7 +2499,6 @@ header::before {
   transform: translateY(-1px);
 }
 
-.navbar-logo span,
 .navbar-logo .navbar-logo-badge {
   display: flex;
   align-items: center;
@@ -2507,20 +2506,18 @@ header::before {
   width: 44px;
   height: 44px;
   flex: 0 0 44px;
-  border-radius: 12px;
-  background: radial-gradient(circle, #0a2542 0%, #051627 100%);
-  border: 1.5px solid rgba(255, 187, 51, 0.55);
-  box-shadow: 0 4px 14px rgba(10, 37, 66, 0.28), 0 0 10px rgba(255, 170, 30, 0.2);
-  overflow: hidden;
-  padding: 2px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
+  padding: 0;
   box-sizing: border-box;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease;
 }
 
-.navbar-logo:hover span,
 .navbar-logo:hover .navbar-logo-badge {
-  transform: scale(1.04);
-  box-shadow: 0 6px 18px rgba(10, 37, 66, 0.38), 0 0 14px rgba(255, 170, 30, 0.35);
+  transform: scale(1.06);
+  box-shadow: none;
 }
 
 .navbar-logo-img {
@@ -2528,6 +2525,7 @@ header::before {
   height: 100%;
   object-fit: contain;
   display: block;
+  filter: drop-shadow(0 2px 5px rgba(10, 37, 66, 0.16));
 }
 
 .navbar-logo small {
@@ -10453,12 +10451,13 @@ textarea:focus {
     gap: 5px !important;
   }
 
-  .navbar-logo span,
   .navbar-logo .navbar-logo-badge {
     width: 38px !important;
     height: 38px !important;
     flex: 0 0 38px !important;
-    border-radius: 10px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 
   .user-name-label {
@@ -10578,12 +10577,13 @@ textarea:focus {
     padding: 0 14px !important;
   }
 
-  .navbar-logo span,
   .navbar-logo .navbar-logo-badge {
     width: 36px !important;
     height: 36px !important;
     flex: 0 0 36px !important;
-    border-radius: 9px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 
   .navbar-logo div {
