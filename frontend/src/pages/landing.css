@@ -1120,6 +1120,8 @@
 }
 
 .maintenance-rail {
+  stroke: rgba(255, 166, 47, 0.65);
+  stroke-dasharray: 5 8;
   stroke: #ffa733;
   stroke-dasharray: 6 6;
   filter: drop-shadow(0 0 5px rgba(255, 167, 51, 0.45));
@@ -1132,6 +1134,7 @@
 }
 
 .block-divider {
+  stroke: rgba(117, 214, 240, 0.35);
   stroke: rgba(140, 230, 255, 0.5);
   stroke-width: 2;
   stroke-dasharray: 3 4;
@@ -1226,11 +1229,13 @@
    ========================================================= */
 
 .rail-train {
-  fill: #edf4f6;
-  stroke: rgba(255, 255, 255, 0.8);
   filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.7));
-  cursor: pointer;
-  transform-origin: center;
+  pointer-events: none;
+}
+
+.train-car,
+.train-gangway-wrap {
+  transform-origin: 0 0;
 }
 
 /* Aerodynamic Locomotive Engine Body */

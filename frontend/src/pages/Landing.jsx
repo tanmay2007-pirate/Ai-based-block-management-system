@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import RailwayLoader from '../components/RailwayLoader';
 import './landing.css';
@@ -39,8 +39,8 @@ const workflow = [
   },
   {
     number: '02',
-    title: 'AI prioritization',
-    text: 'The intelligence engine evaluates risk, urgency, impact and historical patterns.',
+    title: 'Priority scoring',
+    text: 'AI scores work using safety urgency, asset condition and network delay risk.',
   },
   {
     number: '03',
@@ -55,6 +55,145 @@ const workflow = [
 ];
 
 function NetworkGraphic() {
+  const track1Ref = useRef(null);
+  const track2Ref = useRef(null);
+
+  const t1GroupRef = useRef(null);
+  const t1LocoRef = useRef(null);
+  const t1GangwayRef = useRef(null);
+  const t1CoachRef = useRef(null);
+
+  const t2GroupRef = useRef(null);
+  const t2LocoRef = useRef(null);
+  const t2GangwayRef = useRef(null);
+  const t2CoachRef = useRef(null);
+
+  useEffect(() => {
+    const path1 = track1Ref.current;
+    const path2 = track2Ref.current;
+    if (!path1 || !path2) return;
+
+    let len1 = 0;
+    let len2 = 0;
+    try {
+      len1 = path1.getTotalLength();
+      len2 = path2.getTotalLength();
+    } catch {
+      return;
+    }
+    if (!len1 || !len2) return;
+
+    let animId;
+    let lastTime = performance.now();
+    let dist1 = 15;
+    let dist2 = len2 * 0.42;
+
+    const CONSIST_SPACING = 34; // distance between loco center and coach center
+
+    const getAngle = (path, s, totalLen) => {
+      const p1 = path.getPointAtLength(Math.max(0, s - 2.5));
+      const p2 = path.getPointAtLength(Math.min(totalLen, s + 2.5));
+      return Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
+    };
+
+    const updateVehicle = (el, pt, angle) => {
+      if (!el) return;
+      el.setAttribute(
+        'transform',
+        `translate(${pt.x.toFixed(2)}, ${pt.y.toFixed(2)}) rotate(${angle.toFixed(2)})`
+      );
+    };
+
+    const animate = (now) => {
+      const dt = Math.min((now - lastTime) / 1000, 0.08);
+      lastTime = now;
+
+      // -------------------------------------------------------------
+      // TRAIN 1 PHYSICS: Vande Bharat Express (Main Corridor)
+      // Realistic acceleration out of station, high cruise, smooth braking
+      // approaching caution signal at x=430, then rapid sprint to clear line
+      // -------------------------------------------------------------
+      const norm1 = dist1 / len1;
+      let speed1 = 70;
+      if (norm1 < 0.25) {
+        // Smooth departure & acceleration (40 -> 82 px/s)
+        speed1 = 42 + (norm1 / 0.25) * 40;
+      } else if (norm1 < 0.62) {
+        // S-curve and yellow caution signal approach (decelerate to 46 px/s)
+        const p = (norm1 - 0.25) / 0.37;
+        speed1 = 82 - Math.sin(p * Math.PI) * 36;
+      } else {
+        // Clear green block sprint (accelerate to 92 px/s)
+        const p = (norm1 - 0.62) / 0.38;
+        speed1 = 48 + p * 44;
+      }
+
+      dist1 = (dist1 + speed1 * dt) % len1;
+
+      // Train 1 Opacity: smooth seamless fade on track entry / exit
+      if (t1GroupRef.current) {
+        let op1 = 1;
+        if (dist1 < 38) op1 = Math.max(0, dist1 / 38);
+        else if (dist1 > len1 - 42) op1 = Math.max(0, (len1 - dist1) / 42);
+        t1GroupRef.current.style.opacity = op1.toFixed(3);
+      }
+
+      // Loco 1
+      const p1Loco = path1.getPointAtLength(dist1);
+      const angle1Loco = getAngle(path1, dist1, len1);
+      updateVehicle(t1LocoRef.current, p1Loco, angle1Loco);
+
+      // Coupler 1
+      const dist1Gangway = (dist1 - CONSIST_SPACING / 2 + len1) % len1;
+      const p1Gangway = path1.getPointAtLength(dist1Gangway);
+      const angle1Gangway = getAngle(path1, dist1Gangway, len1);
+      updateVehicle(t1GangwayRef.current, p1Gangway, angle1Gangway);
+
+      // Coach 1
+      const dist1Coach = (dist1 - CONSIST_SPACING + len1) % len1;
+      const p1Coach = path1.getPointAtLength(dist1Coach);
+      const angle1Coach = getAngle(path1, dist1Coach, len1);
+      updateVehicle(t1CoachRef.current, p1Coach, angle1Coach);
+
+      // -------------------------------------------------------------
+      // TRAIN 2 PHYSICS: Regional Intercity Express (Secondary Track)
+      // Steady passenger run with smooth harmonic rail cruising
+      // -------------------------------------------------------------
+      const norm2 = dist2 / len2;
+      const speed2 = 52 + 16 * Math.sin(norm2 * Math.PI * 2);
+      dist2 = (dist2 + speed2 * dt) % len2;
+
+      if (t2GroupRef.current) {
+        let op2 = 1;
+        if (dist2 < 35) op2 = Math.max(0, dist2 / 35);
+        else if (dist2 > len2 - 40) op2 = Math.max(0, (len2 - dist2) / 40);
+        t2GroupRef.current.style.opacity = op2.toFixed(3);
+      }
+
+      // Loco 2
+      const p2Loco = path2.getPointAtLength(dist2);
+      const angle2Loco = getAngle(path2, dist2, len2);
+      updateVehicle(t2LocoRef.current, p2Loco, angle2Loco);
+
+      // Coupler 2
+      const dist2Gangway = (dist2 - CONSIST_SPACING / 2 + len2) % len2;
+      const p2Gangway = path2.getPointAtLength(dist2Gangway);
+      const angle2Gangway = getAngle(path2, dist2Gangway, len2);
+      updateVehicle(t2GangwayRef.current, p2Gangway, angle2Gangway);
+
+      // Coach 2
+      const dist2Coach = (dist2 - CONSIST_SPACING + len2) % len2;
+      const p2Coach = path2.getPointAtLength(dist2Coach);
+      const angle2Coach = getAngle(path2, dist2Coach, len2);
+      updateVehicle(t2CoachRef.current, p2Coach, angle2Coach);
+
+      animId = requestAnimationFrame(animate);
+    };
+
+    animId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animId);
+  }, []);
+
   return (
     <div className="landing-network" aria-hidden="true">
       <div className="network-grid" />
@@ -75,9 +214,6 @@ function NetworkGraphic() {
       >
         <defs>
           <linearGradient id="trackGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" />
-            <stop offset="50%" />
-            <stop offset="100%" />
             <stop offset="0%" stopColor="#44bde2" stopOpacity="0.8" />
             <stop offset="50%" stopColor="#7ee3ff" stopOpacity="1" />
             <stop offset="100%" stopColor="#44bde2" stopOpacity="0.8" />
@@ -107,75 +243,56 @@ function NetworkGraphic() {
         </defs>
 
         {/* ================= RAILWAY TRACK 1 (MAIN CORRIDOR) ================= */}
-        {/* Ballast track bed foundation */}
         <path
+          ref={track1Ref}
           className="track-ballast"
           d="M40 360 C130 320 175 250 245 260 S350 340 430 290 S555 150 720 120"
         />
-
-        {/* Railway Sleepers / Ties (crossbars perpendicular to rails) */}
         <path
           className="track-sleepers main-sleepers"
           d="M40 360 C130 320 175 250 245 260 S350 340 430 290 S555 150 720 120"
         />
-
-        {/* Upper Steel Rail */}
         <path
           className="track-steel-rail"
           d="M40 353 C130 313 175 243 245 253 S350 333 430 283 S555 143 720 113"
         />
-
-        {/* Lower Steel Rail */}
         <path
           className="track-steel-rail"
           d="M40 367 C130 327 175 257 245 267 S350 347 430 297 S555 157 720 127"
         />
 
         {/* ================= RAILWAY TRACK 2 (SECONDARY CORRIDOR) ================= */}
-        {/* Ballast track bed foundation */}
         <path
+          ref={track2Ref}
           className="track-ballast"
           d="M20 135 C125 180 185 120 270 150 S400 235 485 190 S610 125 735 205"
         />
-
-        {/* Railway Sleepers / Ties */}
         <path
           className="track-sleepers secondary-sleepers"
           d="M20 135 C125 180 185 120 270 150 S400 235 485 190 S610 125 735 205"
         />
-
-        {/* Upper Steel Rail */}
         <path
           className="track-steel-rail"
           d="M20 128 C125 173 185 113 270 143 S400 228 485 183 S610 118 735 198"
         />
-
-        {/* Lower Steel Rail */}
         <path
           className="track-steel-rail"
           d="M20 142 C125 187 185 127 270 157 S400 242 485 197 S610 132 735 212"
         />
 
         {/* ================= RAILWAY TRACK 3 (MAINTENANCE SIDING) ================= */}
-        {/* Ballast track bed foundation */}
         <path
           className="track-ballast maintenance-ballast"
           d="M190 410 C275 365 315 365 390 395 S500 445 610 405"
         />
-
-        {/* Railway Sleepers / Ties */}
         <path
           className="track-sleepers maintenance-sleepers"
           d="M190 410 C275 365 315 365 390 395 S500 445 610 405"
         />
-
-        {/* Upper Steel Rail */}
         <path
           className="track-steel-rail maintenance-rail"
           d="M190 403 C275 358 315 358 390 388 S500 438 610 398"
         />
-
-        {/* Lower Steel Rail */}
         <path
           className="track-steel-rail maintenance-rail"
           d="M190 417 C275 372 315 372 390 402 S500 452 610 412"
@@ -186,37 +303,10 @@ function NetworkGraphic() {
         <rect x="606" y="403" width="5" height="12" rx="1" fill="#ff5252" />
 
         {/* BLOCK DIVIDERS */}
-        <line
-          className="block-divider"
-          x1="175"
-          y1="305"
-          x2="175"
-          y2="330"
-        />
-
-        <line
-          className="block-divider"
-          x1="315"
-          y1="303"
-          x2="315"
-          y2="328"
-        />
-
-        <line
-          className="block-divider"
-          x1="450"
-          y1="270"
-          x2="450"
-          y2="295"
-        />
-
-        <line
-          className="block-divider"
-          x1="580"
-          y1="165"
-          x2="580"
-          y2="190"
-        />
+        <line className="block-divider" x1="175" y1="305" x2="175" y2="330" />
+        <line className="block-divider" x1="315" y1="303" x2="315" y2="328" />
+        <line className="block-divider" x1="450" y1="270" x2="450" y2="295" />
+        <line className="block-divider" x1="580" y1="165" x2="580" y2="190" />
 
         {/* SIGNALS */}
         <g className="rail-signal signal-green">
@@ -241,162 +331,163 @@ function NetworkGraphic() {
         <circle className="rail-node node-green" cx="580" cy="177" r="8" />
 
         {/* PULSING CONTROL POINT */}
-        <circle
-          className="control-pulse"
-          cx="450"
-          cy="282"
-          r="22"
-        />
+        <circle className="control-pulse" cx="450" cy="282" r="22" />
 
-        {/* ================= TRAIN 1 (HIGH-SPEED VANDE BHARAT EXPRESS) ================= */}
-        <g className="rail-train train-one">
-          <animateMotion
-            dur="13s"
-            repeatCount="indefinite"
-            rotate="auto"
-            path="M40 360 C130 320 175 250 245 260 S350 340 430 290 S555 150 720 120"
-          />
-
-          {/* Forward High-Beam Headlight Projection Cone */}
-          <polygon
-            points="38,0 115,-15 115,15"
-            fill="url(#headlightBeam)"
-            className="train-headlight-cone"
-          />
-
+        {/* ================================================================= */}
+        {/* TRAIN 1 (HIGH-SPEED VANDE BHARAT EXPRESS) — ARTICULATED CONSIST   */}
+        {/* ================================================================= */}
+        <g ref={t1GroupRef} className="rail-train train-one" style={{ opacity: 0 }}>
           {/* TRAILING PASSENGER COACH */}
-          <g className="train-car train-coach">
-            <rect x="-38" y="-6.5" width="34" height="13" rx="2" className="train-coach-body" />
-            <rect x="-38" y="-1.2" width="34" height="2.4" className="train-stripe-blue" />
-            <rect x="-38" y="-6.5" width="34" height="1.8" className="train-stripe-saffron" />
+          <g ref={t1CoachRef} className="train-car train-coach">
+            <rect x="-15" y="-6.5" width="30" height="13" rx="2.5" className="train-coach-body" />
+            <rect x="-15" y="-1.2" width="30" height="2.4" className="train-stripe-blue" />
             {/* Passenger Window Band */}
-            <rect x="-34" y="-5" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            <rect x="-26" y="-5" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            <rect x="-18" y="-5" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            <rect x="-10" y="-5" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            <rect x="-34" y="2.8" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            <rect x="-26" y="2.8" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            <rect x="-18" y="2.8" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            <rect x="-10" y="2.8" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            {/* Red LED Tail Lights */}
-            <circle cx="-37.5" cy="-3.5" r="1.3" className="train-taillight" />
-            <circle cx="-37.5" cy="3.5" r="1.3" className="train-taillight" />
-            {/* Steel Wheelsets Riding on Rails */}
-            <circle cx="-32" cy="-7" r="1.6" className="train-steel-wheel" />
-            <circle cx="-32" cy="7" r="1.6" className="train-steel-wheel" />
-            <circle cx="-14" cy="-7" r="1.6" className="train-steel-wheel" />
-            <circle cx="-14" cy="7" r="1.6" className="train-steel-wheel" />
-            <rect x="-34" y="-8" width="22" height="1.8" rx="0.5" className="train-bogie" />
-            <rect x="-34" y="6.2" width="22" height="1.8" rx="0.5" className="train-bogie" />
+            <rect x="-12" y="-5" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="-5" y="-5" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="2" y="-5" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="9" y="-5" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="-12" y="2.8" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="-5" y="2.8" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="2" y="2.8" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="9" y="2.8" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            {/* Red LED Taillights */}
+            <circle cx="-14.5" cy="-3.5" r="1.3" className="train-taillight" />
+            <circle cx="-14.5" cy="3.5" r="1.3" className="train-taillight" />
+            {/* Steel Wheelsets (Riding precisely on y = ±7 rails) */}
+            <circle cx="-9" cy="-7" r="1.6" className="train-steel-wheel" />
+            <circle cx="-9" cy="7" r="1.6" className="train-steel-wheel" />
+            <circle cx="9" cy="-7" r="1.6" className="train-steel-wheel" />
+            <circle cx="9" cy="7" r="1.6" className="train-steel-wheel" />
+            <rect x="-11" y="-8" width="5" height="1.8" rx="0.5" className="train-bogie" />
+            <rect x="-11" y="6.2" width="5" height="1.8" rx="0.5" className="train-bogie" />
+            <rect x="7" y="-8" width="5" height="1.8" rx="0.5" className="train-bogie" />
+            <rect x="7" y="6.2" width="5" height="1.8" rx="0.5" className="train-bogie" />
           </g>
 
-          {/* Gangway Coupler Accordion Bellows */}
-          <rect x="-4" y="-5" width="4" height="10" rx="0.8" className="train-gangway" />
+          {/* INTER-CAR GANGWAY BELLOWS COUPLER */}
+          <g ref={t1GangwayRef} className="train-gangway-wrap">
+            <rect x="-2" y="-5" width="4" height="10" rx="0.8" className="train-gangway" />
+          </g>
 
-          {/* LEADING LOCOMOTIVE ENGINE */}
-          <g className="train-car train-locomotive">
-            {/* Aerodynamic Bullet Nose Body */}
+          {/* LEADING ELECTRIC BULLET-NOSE LOCOMOTIVE */}
+          <g ref={t1LocoRef} className="train-car train-locomotive">
+            {/* Aerodynamic Body */}
             <path
-              d="M 0 -6.5 L 22 -6.5 Q 35 -6 38 0 Q 35 6 22 6.5 L 0 6.5 Z"
+              d="M -16 -6.5 L 3 -6.5 Q 14 -5.5 17 0 Q 14 5.5 3 6.5 L -16 6.5 Z"
               className="train-loco-body"
             />
-            {/* Indian Railways Saffron / White / Green Speed Livery */}
+            {/* Indian Railways Saffron / Blue / Green Speed Livery */}
             <path
-              d="M 0 -6.5 L 20 -6.5 Q 33 -6 37 0 L 32 0 Q 28 -3 18 -3 L 0 -3 Z"
+              d="M -16 -6.5 L 2 -6.5 Q 12 -5.5 16 0 L 12 0 Q 8 -2.8 0 -2.8 L -16 -2.8 Z"
               className="train-stripe-saffron"
             />
-            <rect x="0" y="-1.2" width="30" height="2.4" className="train-stripe-blue" />
+            <rect x="-16" y="-1.2" width="26" height="2.4" className="train-stripe-blue" />
             <path
-              d="M 0 3 L 18 3 Q 28 3 32 0 L 37 0 Q 33 6 20 6.5 L 0 6.5 Z"
+              d="M -16 2.8 L 0 2.8 Q 8 2.8 12 0 L 16 0 Q 12 5.5 2 6.5 L -16 6.5 Z"
               className="train-stripe-green"
             />
-            {/* Aerodynamic Windshield */}
+            {/* Streamlined Cab Windshield */}
             <path
-              d="M 18 -4.5 L 28 -3.8 Q 32 0 28 3.8 L 18 4.5 Z"
+              d="M 0 -4.2 L 9 -3.5 Q 12 0 9 3.5 L 0 4.2 Z"
               className="train-windshield"
             />
             {/* Cab Side Windows */}
-            <rect x="4" y="-5.2" width="6" height="2.2" rx="0.5" className="train-window-glow" />
-            <rect x="4" y="3" width="6" height="2.2" rx="0.5" className="train-window-glow" />
-            {/* Roof Electric Pantograph */}
+            <rect x="-8" y="-5.2" width="5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="-8" y="3" width="5" height="2.2" rx="0.5" className="train-window-glow" />
+            {/* Overhead Electric Pantograph */}
             <path
-              d="M 6 -6.5 L 11 -12 L 17 -6.5 M 9 -12 L 14 -12 M 11 -12 L 11 -13.5 L 8 -13.5 L 15 -13.5"
+              d="M -7 -6.5 L -2 -11.5 L 3 -6.5 M -4 -11.5 L 0 -11.5 M -2 -11.5 L -2 -13 L -5 -13 L 1 -13"
               className="train-pantograph"
             />
             {/* Forward Dual Headlights */}
-            <circle cx="37" cy="-2" r="1.5" className="train-headlight-lens" />
-            <circle cx="37" cy="2" r="1.5" className="train-headlight-lens" />
-            {/* Steel Wheelsets Riding on Rails */}
-            <circle cx="8" cy="-7" r="1.6" className="train-steel-wheel" />
-            <circle cx="8" cy="7" r="1.6" className="train-steel-wheel" />
-            <circle cx="24" cy="-7" r="1.6" className="train-steel-wheel" />
-            <circle cx="24" cy="7" r="1.6" className="train-steel-wheel" />
-            <rect x="6" y="-8" width="20" height="1.8" rx="0.5" className="train-bogie" />
-            <rect x="6" y="6.2" width="20" height="1.8" rx="0.5" className="train-bogie" />
+            <circle cx="16" cy="-2" r="1.4" className="train-headlight-lens" />
+            <circle cx="16" cy="2" r="1.4" className="train-headlight-lens" />
+            {/* Forward High-Beam Projection Cone */}
+            <polygon
+              points="16,0 95,-16 95,16"
+              fill="url(#headlightBeam)"
+              className="train-headlight-cone"
+            />
+            {/* Steel Wheelsets (Riding precisely on y = ±7 rails) */}
+            <circle cx="-10" cy="-7" r="1.6" className="train-steel-wheel" />
+            <circle cx="-10" cy="7" r="1.6" className="train-steel-wheel" />
+            <circle cx="5" cy="-7" r="1.6" className="train-steel-wheel" />
+            <circle cx="5" cy="7" r="1.6" className="train-steel-wheel" />
+            <rect x="-12" y="-8" width="5" height="1.8" rx="0.5" className="train-bogie" />
+            <rect x="-12" y="6.2" width="5" height="1.8" rx="0.5" className="train-bogie" />
+            <rect x="3" y="-8" width="5" height="1.8" rx="0.5" className="train-bogie" />
+            <rect x="3" y="6.2" width="5" height="1.8" rx="0.5" className="train-bogie" />
           </g>
         </g>
 
-        {/* ================= TRAIN 2 (REGIONAL INTERCITY EXPRESS) ================= */}
-        <g className="rail-train train-two">
-          <animateMotion
-            dur="16s"
-            repeatCount="indefinite"
-            rotate="auto"
-            path="M20 135 C125 180 185 120 270 150 S400 235 485 190 S610 125 735 205"
-          />
-
-          {/* Forward Warm Light Beam */}
-          <polygon
-            points="34,0 100,-14 100,14"
-            fill="url(#headlightBeamOrange)"
-            className="train-headlight-cone"
-          />
-
-          {/* TRAILING COACH */}
-          <g className="train-car train-coach">
-            <rect x="-34" y="-6.5" width="31" height="13" rx="2" className="train-coach-body" />
-            <rect x="-34" y="-1.2" width="31" height="2.4" className="train-stripe-blue" />
-            <rect x="-30" y="-5" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            <rect x="-22" y="-5" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            <rect x="-14" y="-5" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            <rect x="-30" y="2.8" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            <rect x="-22" y="2.8" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            <rect x="-14" y="2.8" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            <circle cx="-33.5" cy="-3.5" r="1.3" className="train-taillight" />
-            <circle cx="-33.5" cy="3.5" r="1.3" className="train-taillight" />
-            <circle cx="-28" cy="-7" r="1.6" className="train-steel-wheel" />
-            <circle cx="-28" cy="7" r="1.6" className="train-steel-wheel" />
-            <circle cx="-12" cy="-7" r="1.6" className="train-steel-wheel" />
-            <circle cx="-12" cy="7" r="1.6" className="train-steel-wheel" />
+        {/* ================================================================= */}
+        {/* TRAIN 2 (REGIONAL INTERCITY EXPRESS) — ARTICULATED CONSIST        */}
+        {/* ================================================================= */}
+        <g ref={t2GroupRef} className="rail-train train-two" style={{ opacity: 0 }}>
+          {/* TRAILING PASSENGER COACH */}
+          <g ref={t2CoachRef} className="train-car train-coach">
+            <rect x="-15" y="-6.5" width="30" height="13" rx="2.5" className="train-coach-body" />
+            <rect x="-15" y="-1.2" width="30" height="2.4" className="train-stripe-blue" />
+            {/* Passenger Window Band */}
+            <rect x="-12" y="-5" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="-5" y="-5" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="2" y="-5" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="9" y="-5" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="-12" y="2.8" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="-5" y="2.8" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="2" y="2.8" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="9" y="2.8" width="4.5" height="2.2" rx="0.5" className="train-window-glow" />
+            {/* Red LED Taillights */}
+            <circle cx="-14.5" cy="-3.5" r="1.3" className="train-taillight" />
+            <circle cx="-14.5" cy="3.5" r="1.3" className="train-taillight" />
+            {/* Steel Wheelsets on rails */}
+            <circle cx="-9" cy="-7" r="1.6" className="train-steel-wheel" />
+            <circle cx="-9" cy="7" r="1.6" className="train-steel-wheel" />
+            <circle cx="9" cy="-7" r="1.6" className="train-steel-wheel" />
+            <circle cx="9" cy="7" r="1.6" className="train-steel-wheel" />
+            <rect x="-11" y="-8" width="5" height="1.8" rx="0.5" className="train-bogie" />
+            <rect x="-11" y="6.2" width="5" height="1.8" rx="0.5" className="train-bogie" />
+            <rect x="7" y="-8" width="5" height="1.8" rx="0.5" className="train-bogie" />
+            <rect x="7" y="6.2" width="5" height="1.8" rx="0.5" className="train-bogie" />
           </g>
 
-          {/* Gangway Coupler */}
-          <rect x="-3" y="-5" width="3" height="10" rx="0.8" className="train-gangway" />
+          {/* INTER-CAR GANGWAY BELLOWS COUPLER */}
+          <g ref={t2GangwayRef} className="train-gangway-wrap">
+            <rect x="-2" y="-5" width="4" height="10" rx="0.8" className="train-gangway" />
+          </g>
 
-          {/* LEADING LOCOMOTIVE */}
-          <g className="train-car train-locomotive">
+          {/* LEADING ELECTRIC BULLET-NOSE LOCOMOTIVE */}
+          <g ref={t2LocoRef} className="train-car train-locomotive">
             <path
-              d="M 0 -6.5 L 20 -6.5 Q 31 -5.5 34 0 Q 31 5.5 20 6.5 L 0 6.5 Z"
+              d="M -16 -6.5 L 3 -6.5 Q 14 -5.5 17 0 Q 14 5.5 3 6.5 L -16 6.5 Z"
               className="train-loco-body"
             />
-            <rect x="0" y="-1.2" width="28" height="2.4" className="train-stripe-saffron" />
+            <rect x="-16" y="-1.2" width="26" height="2.4" className="train-stripe-saffron" />
             <path
-              d="M 16 -4.2 L 26 -3.5 Q 29 0 26 3.5 L 16 4.2 Z"
+              d="M 0 -4.2 L 9 -3.5 Q 12 0 9 3.5 L 0 4.2 Z"
               className="train-windshield"
             />
-            <rect x="4" y="-5" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            <rect x="4" y="2.8" width="5" height="2.2" rx="0.5" className="train-window-glow" />
-            {/* Roof Pantograph */}
+            <rect x="-8" y="-5.2" width="5" height="2.2" rx="0.5" className="train-window-glow" />
+            <rect x="-8" y="3" width="5" height="2.2" rx="0.5" className="train-window-glow" />
             <path
-              d="M 4 -6.5 L 9 -11.5 L 14 -6.5 M 7 -11.5 L 11 -11.5"
+              d="M -7 -6.5 L -2 -11.5 L 3 -6.5 M -4 -11.5 L 0 -11.5 M -2 -11.5 L -2 -13 L -5 -13 L 1 -13"
               className="train-pantograph"
             />
-            <circle cx="33" cy="-2" r="1.4" className="train-headlight-lens" />
-            <circle cx="33" cy="2" r="1.4" className="train-headlight-lens" />
-            <circle cx="8" cy="-7" r="1.6" className="train-steel-wheel" />
-            <circle cx="8" cy="7" r="1.6" className="train-steel-wheel" />
-            <circle cx="20" cy="-7" r="1.6" className="train-steel-wheel" />
-            <circle cx="20" cy="7" r="1.6" className="train-steel-wheel" />
+            <circle cx="16" cy="-2" r="1.4" className="train-headlight-lens" />
+            <circle cx="16" cy="2" r="1.4" className="train-headlight-lens" />
+            <polygon
+              points="16,0 95,-16 95,16"
+              fill="url(#headlightBeamOrange)"
+              className="train-headlight-cone"
+            />
+            <circle cx="-10" cy="-7" r="1.6" className="train-steel-wheel" />
+            <circle cx="-10" cy="7" r="1.6" className="train-steel-wheel" />
+            <circle cx="5" cy="-7" r="1.6" className="train-steel-wheel" />
+            <circle cx="5" cy="7" r="1.6" className="train-steel-wheel" />
+            <rect x="-12" y="-8" width="5" height="1.8" rx="0.5" className="train-bogie" />
+            <rect x="-12" y="6.2" width="5" height="1.8" rx="0.5" className="train-bogie" />
+            <rect x="3" y="-8" width="5" height="1.8" rx="0.5" className="train-bogie" />
+            <rect x="3" y="6.2" width="5" height="1.8" rx="0.5" className="train-bogie" />
           </g>
         </g>
       </svg>
