@@ -41,7 +41,6 @@ html {
   min-width: 320px;
   background: #f4f7f9;
   -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
 }
 
 body {
@@ -1984,8 +1983,8 @@ select:focus {
   left: 0;
   z-index: 990;
   background: rgba(16, 42, 67, 0.35);
-  backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
   pointer-events: auto;
   display: flex;
   justify-content: flex-end;
@@ -2428,8 +2427,8 @@ header {
   padding: 0 32px;
   margin: 0;
   background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(24px) saturate(190%);
   -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
   border-bottom: 1px solid rgba(210, 225, 236, 0.85);
   box-shadow: 0 4px 24px rgba(16, 42, 67, 0.06);
   box-sizing: border-box;
@@ -2717,8 +2716,8 @@ aside {
   height: calc(100vh - 74px);
   overflow-y: auto;
   background: rgba(255, 255, 255, 0.68);
-  backdrop-filter: blur(24px) saturate(190%);
   -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
   color: #1e293b;
   padding: 26px 20px 22px;
   display: flex;
@@ -2765,8 +2764,8 @@ aside {
 
 .sidebar-profile-card {
   background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   border: 1px solid rgba(226, 232, 240, 0.85);
   border-radius: 14px;
   padding: 15px;
@@ -2875,8 +2874,8 @@ aside {
   gap: 12px;
   padding: 10px 12px;
   background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(226, 232, 240, 0.8);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(16, 42, 67, 0.03);
@@ -8794,11 +8793,6 @@ a {
 
 /* ---------- SCROLLBAR ---------- */
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #bdccd4 transparent;
-}
-
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -9913,8 +9907,8 @@ textarea:focus {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.62);
-  backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   z-index: 1040;
   opacity: 0;
   pointer-events: none;
@@ -9933,8 +9927,8 @@ textarea:focus {
   width: min(340px, 86vw);
   height: 100vh;
   background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(28px) saturate(190%);
   -webkit-backdrop-filter: blur(28px) saturate(190%);
+  backdrop-filter: blur(28px) saturate(190%);
   border-left: 1px solid rgba(220, 233, 242, 0.95);
   box-shadow: -10px 0 45px rgba(16, 42, 67, 0.22);
   z-index: 1050;
@@ -10366,7 +10360,6 @@ textarea:focus {
   .calendar-view-switcher {
     width: 100% !important;
     overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
     padding: 4px !important;
     display: flex !important;
     justify-content: flex-start !important;
@@ -10386,7 +10379,7 @@ textarea:focus {
 
   .calendar-kpi {
     padding: 10px !important;
-    min-height: auto !important;
+    min-height: 0 !important;
   }
 
   .calendar-kpi strong {
@@ -10414,7 +10407,6 @@ textarea:focus {
   .calendar-filters {
     width: 100% !important;
     overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
     display: flex !important;
     flex-wrap: nowrap !important;
     padding-bottom: 4px !important;
@@ -10493,7 +10485,6 @@ textarea:focus {
 
   .priority-table-wrap {
     overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
     padding-bottom: 6px !important;
   }
 
@@ -10511,7 +10502,6 @@ textarea:focus {
   .corridor-pills {
     width: 100% !important;
     overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
     padding-bottom: 6px !important;
     flex-wrap: nowrap !important;
   }
@@ -10522,7 +10512,6 @@ textarea:focus {
 
   .twin-schematic-wrap {
     overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
   }
 
   /* What-If Simulator */
