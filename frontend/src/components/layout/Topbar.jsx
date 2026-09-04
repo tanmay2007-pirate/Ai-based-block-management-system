@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const links = [
-  ['/', 'Overview'],
+  ['/overview', 'Overview'],
   ['/calendar', 'Block Calendar'],
   ['/priority-list', 'Priority List'],
   ['/reports', 'Reports'],
@@ -37,7 +37,7 @@ export default function Topbar() {
     <>
       <header className="glass-navbar">
         <div className="navbar-brand">
-          <NavLink to="/" className="navbar-logo" onClick={() => setMobileOpen(false)}>
+          <NavLink to="/overview" className="navbar-logo" onClick={() => setMobileOpen(false)}>
             <span>IR</span>
             <div>
               Railway
